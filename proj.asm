@@ -19,11 +19,12 @@ call init_texto
 call init_grafico
 call init_mem_preguntas
 call init_pregunta
-call pregunta_1
+jmp pregunta_1
 
-mov ax, 0000h
-int 16h
+;mov ax, 0000h
+;int 16h
 
+fin_programa:
 mov ax, 4c00h
 int 21h
 ; ------------------------------------------------------------------------------------------------
@@ -33,8 +34,8 @@ int 21h
 ;--------------------------------------------------------
 
 init_mem_preguntas:
-	;Preguntas contestadas
-	mov al, 01d
+	;Posicion de la pregunta
+	mov al, 00d
 	mov ds:[0220h], al
 
 	;Preguntas por contestar
@@ -66,17 +67,71 @@ init_mem_preguntas:
 
 	ret
 
+eval_pregunta:
+	mov al, ds:[0220h]
+	mov ah, 00h
+	mov si, ax
+	mov al, ds:[0300h + si]
+	cmp al, ds:[0210h]
+	ret
+;--------------------------------------------------------
+; PREGUNTA 2
+;--------------------------------------------------------
+
 pregunta_1:
-	call barra_progreso
+	call init_grafico
+	call limpiar_reg
 	call copiar_pregunta1
 	call init_pregunta
-	;call init_interface
-	;call texto_pregunta
-	call fin_texto_pregunta
-	;call iconos
-	;call icono_siguiente
-	;call icono_anterior
-	ret
+	call texto_pregunta
+	call barra_progreso
+	call init_interface
+
+p1_manejar_clic:
+	call manejar_clic
+	call buscar_btn
+
+	mov al, ds:[0275h]
+	cmp al, 10h
+	je p1_btn_falso
+	cmp al, 11h
+	je p1_btn_verdadero
+	jmp p1_manejar_clic
+
+p1_btn_verdadero:
+	jmp pregunta_2
+p1_btn_falso:
+	jmp pregunta_2
+	jmp fin_programa
+
+
+;--------------------------------------------------------
+; PREGUNTA 2
+;--------------------------------------------------------
+
+pregunta_2:
+	call init_grafico
+	call limpiar_reg
+	call copiar_pregunta2
+	call init_pregunta
+	call texto_pregunta
+	call barra_progreso
+	call init_interface
+
+p2_manejar_clic:
+	call manejar_clic
+	call buscar_btn
+
+	mov al, ds:[0275h]
+	cmp al, 10h
+	je p2_btn_falso
+	cmp al, 11h
+	je p2_btn_verdadero
+	jmp p2_manejar_clic
+
+p2_btn_verdadero:
+p2_btn_falso:
+	jmp pantalla_fin
 
 init_pregunta:
 	;Posicionar el cursor
@@ -87,16 +142,17 @@ init_pregunta:
 	;Filas y columnas iniciales para el texto de la pregunta
 	mov dh, 01h
 	mov dl, 02h
+	int 10h
 
 	;Limpiando acumuladores
 	mov di, 0000h
 	mov si, 0000h
-	int 10h
 	ret
 
 texto_pregunta:
 	mov al, 07fh
 	call setear_color_texto
+itr_texto_pregunta:
 	; Copiar pregunta completa
 	mov al, ds:[0500h + di]
 	; El simbolo ; es el delimitador.
@@ -104,10 +160,28 @@ texto_pregunta:
 	je fin_texto_pregunta
 	call poner_char
 	inc di
-	jmp texto_pregunta
+	jmp itr_texto_pregunta
+fin_texto_pregunta:
+	ret
+
+limpiar_pantalla:
+	mov si, 0000h
+itr_limpiar_pantalla:
+	mov al, ' '
+	call poner_char
+	inc si
+	cmp si, 2000d
+	jnz itr_limpiar_pantalla
+	mov dh, 25d
+	mov dl, 80d
+	mov al, ' '
+	call poner_char
+	call poner_char
+	ret
 
 ; DS:[0180H]: columna para el texto
-fin_texto_pregunta:
+pantalla_fin:
+	call init_grafico
 	call limpiar_reg
 	mov dh, 02d
 	mov di, 0000d
@@ -155,7 +229,20 @@ fin_texto_pregunta:
 
 	call fin_etiquetas
 	call calificacion_final
-	ret
+
+pantalla_fin_manejar_clic:
+	call manejar_clic
+	call buscar_btn
+
+	mov al, ds:[0275h]
+	cmp al, 10h
+	je pantalla_fin_btn_salir
+	cmp al, 11h
+	je pantalla_fin_btn_salir
+	jmp pantalla_fin_manejar_clic
+
+pantalla_fin_btn_salir:
+	jmp fin_programa
 
 calificacion_final:
 	mov si, 0000h
@@ -282,6 +369,63 @@ color_amarillo:
 	mov al, 0feh
 	call setear_color_texto
 	ret
+
+;--------------------------------------------------------
+; Controlador de botones
+;--------------------------------------------------------
+
+manejar_clic:
+	mov ax, 0005h
+	mov bx, 0000h	; clic izquierdo
+	int 33h 		; interrupcion de manejo de mouse
+
+	cmp bx, 0001h
+	jne manejar_clic
+	ret
+
+buscar_btn:
+	call verificar_btn_verdadero
+	call verificar_btn_falso
+	ret
+
+verificar_btn_siguiente:
+	ret
+
+verificar_btn_anterior:
+	ret
+
+verificar_btn_verdadero:
+	;310 - 405 en x
+	;405 - 435 en y
+	cmp cx, 0310d
+	jb salir_verificar_btn_verdadero
+	cmp cx, 0405d
+	ja salir_verificar_btn_verdadero
+	cmp dx, 0405d
+	jb salir_verificar_btn_verdadero
+	cmp dx, 0435d
+	ja salir_verificar_btn_verdadero
+	mov al, 11h
+	mov ds:[0275h], al
+salir_verificar_btn_verdadero:
+	ret
+
+verificar_btn_falso:
+	;430 - 525 en x
+	;405 - 435 en y
+	cmp cx, 0430d
+	jb salir_verificar_btn_falso
+	cmp cx, 0525d
+	ja salir_verificar_btn_falso
+	cmp dx, 0405d
+	jb salir_verificar_btn_falso
+	cmp dx, 0435d 
+	ja salir_verificar_btn_falso
+	mov al, 10h
+	mov ds:[0275h], al
+salir_verificar_btn_falso:
+	ret
+
 ;--------------------------------------------------------
 ; Configuracion de los distintos modos de texto y video.
 ;--------------------------------------------------------
@@ -297,9 +441,19 @@ limpiar_reg:
 	ret
 
 init_grafico:
+	; modo grafico 640x480
 	mov ah, 00h
 	mov al, 12h
 	int 10h
+
+	; manejo del mouse
+	mov ax, 0000h
+	int 33h
+	
+	; mostrar el puntero
+	mov ax, 0001h
+	int 33h
+
 	ret
 
 poner_pixel:
