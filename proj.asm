@@ -38,7 +38,7 @@ init_mem_preguntas:
 	mov al, 00d
 	mov ds:[0220h], al
 
-	;Preguntas por contestar
+	;Total de preguntas
 	mov al, 25d
 	mov ds:[0221h], al
 
@@ -46,39 +46,27 @@ init_mem_preguntas:
 	mov al, 02d ; Indicador de pregunta sin contestar.
 	mov si, 0000h
 
+	;0300h - 0300h + 25d: respuestas del usuario
+	; 00h: incorrecto
+	; 01h: correcto
+	; 02h: sin contestar
 	llenar_contestadas:
 		mov ds:[0300h + si], al
 		inc si
 		cmp si, 0025d
 		jnz llenar_contestadas
 
-	mov al, 01h
-	mov ds:[0302h], al
-
-	mov al, 01h
-	mov ds:[0315h], al
-
-	mov al, 00h
-	mov ds:[0310h], al
-
-	mov al, 00h
-	mov ds:[0311h], al
-
-
 	ret
 
-eval_pregunta:
-	mov al, ds:[0220h]
-	mov ah, 00h
-	mov si, ax
-	mov al, ds:[0300h + si]
-	cmp al, ds:[0210h]
-	ret
 ;--------------------------------------------------------
 ; PREGUNTA 2
 ;--------------------------------------------------------
 
 pregunta_1:
+	; Pregunta actual: 01h
+	mov al, 01h
+	; A utilizar para la barra de progreso
+	mov ds:[0220h], al
 	call init_grafico
 	call limpiar_reg
 	call copiar_pregunta1
@@ -87,20 +75,28 @@ pregunta_1:
 	call barra_progreso
 	call init_interface
 
+mov si, 0000h
 p1_manejar_clic:
 	call manejar_clic
 	call buscar_btn
 
+	; 0275h: codigo de boton  presionado
 	mov al, ds:[0275h]
+	; 10h: boton de falso
 	cmp al, 10h
 	je p1_btn_falso
+	; 11h: boton de verdadero
 	cmp al, 11h
 	je p1_btn_verdadero
 	jmp p1_manejar_clic
 
 p1_btn_verdadero:
+	mov al, 01h
+	mov ds:[0300h+si],al
 	jmp pregunta_2
 p1_btn_falso:
+	mov al, 00h
+	mov ds:[0300h+si],al
 	jmp pregunta_2
 	jmp fin_programa
 
@@ -110,6 +106,11 @@ p1_btn_falso:
 ;--------------------------------------------------------
 
 pregunta_2:
+	; Pregunta actual: 01h
+	mov al, 02h
+
+	; A utilizar para la barra de progreso
+	mov ds:[0220h], al
 	call init_grafico
 	call limpiar_reg
 	call copiar_pregunta2
@@ -118,6 +119,7 @@ pregunta_2:
 	call barra_progreso
 	call init_interface
 
+mov si, 0001h
 p2_manejar_clic:
 	call manejar_clic
 	call buscar_btn
@@ -130,7 +132,12 @@ p2_manejar_clic:
 	jmp p2_manejar_clic
 
 p2_btn_verdadero:
+	mov al, 01h
+	mov ds:[0300h+si], al
+	jmp pantalla_fin
 p2_btn_falso:
+	mov al, 00h
+	mov ds:[0300h+si], al
 	jmp pantalla_fin
 
 init_pregunta:
@@ -164,23 +171,24 @@ itr_texto_pregunta:
 fin_texto_pregunta:
 	ret
 
-limpiar_pantalla:
-	mov si, 0000h
-itr_limpiar_pantalla:
-	mov al, ' '
-	call poner_char
-	inc si
-	cmp si, 2000d
-	jnz itr_limpiar_pantalla
-	mov dh, 25d
-	mov dl, 80d
-	mov al, ' '
-	call poner_char
-	call poner_char
-	ret
+; limpiar_pantalla:
+; 	mov si, 0000h
+; itr_limpiar_pantalla:
+; 	mov al, ' '
+; 	call poner_char
+; 	inc si
+; 	cmp si, 2000d
+; 	jnz itr_limpiar_pantalla
+; 	mov dh, 25d
+; 	mov dl, 80d
+; 	mov al, ' '
+; 	call poner_char
+; 	call poner_char
+; 	ret
 
 ; DS:[0180H]: columna para el texto
 pantalla_fin:
+	call limpiar_reg
 	call init_grafico
 	call limpiar_reg
 	mov dh, 02d
