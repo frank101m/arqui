@@ -1,15 +1,12 @@
-; ---------------------------------------<Directivas>---------------------------------------
-; Procesado
+; Procesador
 .386
 ; Segmento de Pila
 Stack Segment Para Stack Use16 'STACK'
-	db 1024 dup(0)
+	db 2048 dup(0)
 Stack Ends
-; Segmento de Código
 Code Segment Para Use16 'Code' 
 	Assume CS:Code
 	Assume DS:Code
-;Dirección de Inicio:
 Org 0100H
 Start:	;Comienzo de Programa
 ; ------------------------------------------------------------------------------------------------
@@ -19,6 +16,11 @@ call init_texto
 call init_grafico
 call init_mem_preguntas
 call init_pregunta
+
+; manejo del mouse
+mov ax, 0000h
+int 33h
+
 jmp pregunta_1
 
 ;mov ax, 0000h
@@ -27,6 +29,7 @@ jmp pregunta_1
 fin_programa:
 mov ax, 4c00h
 int 21h
+
 ; ------------------------------------------------------------------------------------------------
 
 ;--------------------------------------------------------
@@ -35,15 +38,15 @@ int 21h
 
 init_mem_preguntas:
 	;Posicion de la pregunta
-	mov al, 00d
+	mov al,00d
 	mov ds:[0220h], al
 
 	;Total de preguntas
-	mov al, 25d
+	mov al,25d
 	mov ds:[0221h], al
 
 	;Valores de las preguntas
-	mov al, 02d ; Indicador de pregunta sin contestar.
+	mov al,02d ; Indicador de pregunta sin contestar.
 	mov si, 0000h
 
 	;0300h - 0300h + 25d: respuestas del usuario
@@ -59,20 +62,21 @@ init_mem_preguntas:
 	ret
 
 ;--------------------------------------------------------
-; PREGUNTA 2
+; PREGUNTA 1
 ;--------------------------------------------------------
 
 pregunta_1:
 	; Pregunta actual: 01h
-	mov al, 01h
+	mov al,01h
 	; A utilizar para la barra de progreso
 	mov ds:[0220h], al
 	call init_grafico
 	call limpiar_reg
-	call copiar_pregunta1
+	call cp1
 	call init_pregunta
 	call texto_pregunta
 	call barra_progreso
+	call btn_siguiente
 	call init_interface
 
 mov si, 0000h
@@ -81,21 +85,23 @@ p1_manejar_clic:
 	call buscar_btn
 
 	; 0275h: codigo de boton  presionado
-	mov al, ds:[0275h]
+	mov al,ds:[0275h]
 	; 10h: boton de falso
-	cmp al, 10h
+	cmp al,10h
 	je p1_btn_falso
 	; 11h: boton de verdadero
-	cmp al, 11h
+	cmp al,11h
 	je p1_btn_verdadero
+	cmp al,13h
+	je pregunta_2
 	jmp p1_manejar_clic
 
 p1_btn_verdadero:
-	mov al, 01h
+	mov al,01h
 	mov ds:[0300h+si],al
 	jmp pregunta_2
 p1_btn_falso:
-	mov al, 00h
+	mov al,00h
 	mov ds:[0300h+si],al
 	jmp pregunta_2
 	jmp fin_programa
@@ -107,42 +113,866 @@ p1_btn_falso:
 
 pregunta_2:
 	; Pregunta actual: 01h
-	mov al, 02h
+	mov al,02h
 
 	; A utilizar para la barra de progreso
 	mov ds:[0220h], al
 	call init_grafico
 	call limpiar_reg
-	call copiar_pregunta2
+	call cp2
 	call init_pregunta
 	call texto_pregunta
 	call barra_progreso
+	call btn_anterior
+	call btn_siguiente
 	call init_interface
 
 mov si, 0001h
 p2_manejar_clic:
+
 	call manejar_clic
 	call buscar_btn
 
-	mov al, ds:[0275h]
-	cmp al, 10h
+	mov al,ds:[0275h]
+	cmp al,10h
 	je p2_btn_falso
-	cmp al, 11h
+	cmp al,11h
 	je p2_btn_verdadero
+	cmp al,12h
+	je pregunta_1
+	cmp al,13h
+	je pregunta_3
 	jmp p2_manejar_clic
 
 p2_btn_verdadero:
-	mov al, 01h
+	mov al,01h
 	mov ds:[0300h+si], al
-	jmp pantalla_fin
+	jmp pregunta_3
 p2_btn_falso:
-	mov al, 00h
+	mov al,00h
 	mov ds:[0300h+si], al
-	jmp pantalla_fin
+	jmp pregunta_3
 
+;--------------------------------------------------------
+; PREGUNTA 3
+;--------------------------------------------------------
+
+pregunta_3:
+	mov al,03h
+
+	; A utilizar para la barra de progreso
+	mov ds:[0220h], al
+	call init_grafico
+	call limpiar_reg
+	call cp3
+	call init_pregunta
+	call texto_pregunta
+	call barra_progreso
+	call btn_anterior
+	call btn_siguiente
+	call init_interface
+
+mov si, 0002h
+p3_manejar_clic:
+
+	call manejar_clic
+	call buscar_btn
+
+	mov al,ds:[0275h]
+	cmp al,10h
+	je p3_btn_falso
+	cmp al,11h
+	je p3_btn_verdadero
+	cmp al,12h
+	je pregunta_2
+	cmp al,13h
+	je pregunta_4
+	jmp p3_manejar_clic
+
+p3_btn_verdadero:
+	mov al,01h
+	mov ds:[0300h+si], al
+	jmp pregunta_4
+p3_btn_falso:
+	mov al,00h
+	mov ds:[0300h+si], al
+	jmp pregunta_4
+
+;--------------------------------------------------------
+; PREGUNTA 4
+;--------------------------------------------------------
+
+pregunta_4:
+	mov al,04h
+
+	; A utilizar para la barra de progreso
+	mov ds:[0220h], al
+	call init_grafico
+	call limpiar_reg
+	call cp4
+	call init_pregunta
+	call texto_pregunta
+	call barra_progreso
+	call btn_anterior
+	call btn_siguiente
+	call init_interface
+
+mov si, 0003h
+p4_manejar_clic:
+
+	call manejar_clic
+	call buscar_btn
+
+	mov al,ds:[0275h]
+	cmp al,10h
+	je p4_btn_falso
+	cmp al,11h
+	je p4_btn_verdadero
+	cmp al,12h
+	je pregunta_3
+	cmp al,13h
+	je pregunta_5
+	jmp p4_manejar_clic
+
+p4_btn_verdadero:
+	mov al,00h
+	mov ds:[0300h+si], al
+	jmp pregunta_5
+p4_btn_falso:
+	mov al,01h
+	mov ds:[0300h+si], al
+	jmp pregunta_5
+
+;--------------------------------------------------------
+; PREGUNTA 5
+;--------------------------------------------------------
+
+pregunta_5:
+	mov al,05h
+
+	; A utilizar para la barra de progreso
+	mov ds:[0220h], al
+	call init_grafico
+	call limpiar_reg
+	call cp5
+	call init_pregunta
+	call texto_pregunta
+	call barra_progreso
+	call btn_anterior
+	call btn_siguiente
+	call init_interface
+
+mov si, 0004h
+p5_manejar_clic:
+
+	call manejar_clic
+	call buscar_btn
+
+	mov al,ds:[0275h]
+	cmp al,10h
+	je p5_btn_falso
+	cmp al,11h
+	je p5_btn_verdadero
+	cmp al,12h
+	je pregunta_4
+	cmp al,13h
+	je pregunta_6
+	jmp p5_manejar_clic
+
+p5_btn_verdadero:
+	mov al,00h
+	mov ds:[0300h+si], al
+	jmp pregunta_6
+p5_btn_falso:
+	mov al,01h
+	mov ds:[0300h+si], al
+	jmp pregunta_6
+
+;--------------------------------------------------------
+; PREGUNTA 6
+;--------------------------------------------------------
+
+pregunta_6:
+	mov al,06h
+
+	; A utilizar para la barra de progreso
+	mov ds:[0220h], al
+	call init_grafico
+	call limpiar_reg
+	call cp6
+	call init_pregunta
+	call texto_pregunta
+	call barra_progreso
+	call btn_anterior
+	call btn_siguiente
+	call init_interface
+
+mov si, 0005h
+p6_manejar_clic:
+
+	call manejar_clic
+	call buscar_btn
+
+	mov al,ds:[0275h]
+	cmp al,10h
+	je p6_btn_falso
+	cmp al,11h
+	je p6_btn_verdadero
+	cmp al,12h
+	je pregunta_5
+	cmp al,13h
+	je pregunta_7
+	jmp p6_manejar_clic
+
+p6_btn_verdadero:
+	mov al,00h
+	mov ds:[0300h+si], al
+	jmp pregunta_7
+p6_btn_falso:
+	mov al,01h
+	mov ds:[0300h+si], al
+	jmp pregunta_7
+
+;--------------------------------------------------------
+; PREGUNTA 7
+;--------------------------------------------------------
+
+pregunta_7:
+	mov al,07h
+
+	; A utilizar para la barra de progreso
+	mov ds:[0220h], al
+	call init_grafico
+	call limpiar_reg
+	call cp7
+	call init_pregunta
+	call texto_pregunta
+	call barra_progreso
+	call btn_anterior
+	call btn_siguiente
+	call init_interface
+
+mov si, 0006h
+p7_manejar_clic:
+
+	call manejar_clic
+	call buscar_btn
+
+	mov al,ds:[0275h]
+	cmp al,10h
+	je p7_btn_falso
+	cmp al,11h
+	je p7_btn_verdadero
+	cmp al,12h
+	je pregunta_6
+	cmp al,13h
+	je pregunta_8
+	jmp p7_manejar_clic
+
+p7_btn_verdadero:
+	mov al,00h
+	mov ds:[0300h+si], al
+	jmp pregunta_8
+p7_btn_falso:
+	mov al,01h
+	mov ds:[0300h+si], al
+	jmp pregunta_8
+
+;--------------------------------------------------------
+; PREGUNTA 8
+;--------------------------------------------------------
+
+pregunta_8:
+	mov al,08h
+
+	; A utilizar para la barra de progreso
+	mov ds:[0220h], al
+	call init_grafico
+	call limpiar_reg
+	call cp8
+	call init_pregunta
+	call texto_pregunta
+	call barra_progreso
+	call btn_anterior
+	call btn_siguiente
+	call init_interface
+
+mov si, 0007h
+p8_manejar_clic:
+
+	call manejar_clic
+	call buscar_btn
+
+	mov al,ds:[0275h]
+	cmp al,10h
+	je p8_btn_falso
+	cmp al,11h
+	je p8_btn_verdadero
+	cmp al,12h
+	je pregunta_7
+	cmp al,13h
+	je pregunta_9
+	jmp p8_manejar_clic
+
+p8_btn_verdadero:
+	mov al,00h
+	mov ds:[0300h+si], al
+	jmp pregunta_9
+p8_btn_falso:
+	mov al,01h
+	mov ds:[0300h+si], al
+	jmp pregunta_9
+
+
+;--------------------------------------------------------
+; PREGUNTA 9
+;--------------------------------------------------------
+
+pregunta_9:
+	mov al,09h
+
+	; A utilizar para la barra de progreso
+	mov ds:[0220h], al
+	call init_grafico
+	call limpiar_reg
+	call cp9
+	call init_pregunta
+	call texto_pregunta
+	call barra_progreso
+	call btn_anterior
+	call btn_siguiente
+	call init_interface
+
+mov si, 0008h
+p9_manejar_clic:
+
+	call manejar_clic
+	call buscar_btn
+
+	mov al,ds:[0275h]
+	cmp al,10h
+	je p9_btn_falso
+	cmp al,11h
+	je p9_btn_verdadero
+	cmp al,12h
+	je pregunta_8
+	cmp al,13h
+	je pregunta_10
+	jmp p9_manejar_clic
+
+p9_btn_verdadero:
+	mov al,00h
+	mov ds:[0300h+si], al
+	jmp pregunta_10
+p9_btn_falso:
+	mov al,01h
+	mov ds:[0300h+si], al
+	jmp pregunta_10
+
+;--------------------------------------------------------
+; PREGUNTA 10
+;--------------------------------------------------------
+
+pregunta_10:
+	mov al,010d
+
+	; A utilizar para la barra de progreso
+	mov ds:[0220h], al
+	call init_grafico
+	call limpiar_reg
+	call cp10
+	call init_pregunta
+	call texto_pregunta
+	call barra_progreso
+	call btn_anterior
+	call btn_siguiente
+	call init_interface
+
+mov si, 0009d
+p10_manejar_clic:
+
+	call manejar_clic
+	call buscar_btn
+
+	mov al,ds:[0275h]
+	cmp al,10h
+	je p10_btn_falso
+	cmp al,11h
+	je p10_btn_verdadero
+	cmp al,12h
+	je pregunta_9
+	cmp al,13h
+	je pregunta_11
+	jmp p10_manejar_clic
+
+p10_btn_verdadero:
+	mov al,00h
+	mov ds:[0300h+si], al
+	jmp pregunta_11
+p10_btn_falso:
+	mov al,01h
+	mov ds:[0300h+si], al
+	jmp pregunta_11
+
+;--------------------------------------------------------
+; PREGUNTA 11
+;--------------------------------------------------------
+
+pregunta_11:
+	mov al,11d
+
+	; A utilizar para la barra de progreso
+	mov ds:[0220h], al
+	call init_grafico
+	call limpiar_reg
+	call cp11
+	call init_pregunta
+	call texto_pregunta
+	call barra_progreso
+	call btn_anterior
+	call btn_siguiente
+	call init_interface
+
+mov si, 0010d
+p11_manejar_clic:
+
+	call manejar_clic
+	call buscar_btn
+
+	mov al,ds:[0275h]
+	cmp al,10h
+	je p11_btn_falso
+	cmp al,11h
+	je p11_btn_verdadero
+	cmp al,12h
+	je pregunta_10
+	cmp al,13h
+	je pregunta_12
+	jmp p11_manejar_clic
+
+p11_btn_verdadero:
+	mov al,00h
+	mov ds:[0300h+si], al
+	jmp pregunta_12
+p11_btn_falso:
+	mov al,01h
+	mov ds:[0300h+si], al
+	jmp pregunta_12
+
+;--------------------------------------------------------
+; PREGUNTA 12
+;--------------------------------------------------------
+
+pregunta_12:
+	mov al,12d
+
+	; A utilizar para la barra de progreso
+	mov ds:[0220h], al
+	call init_grafico
+	call limpiar_reg
+	call cp12
+	call init_pregunta
+	call texto_pregunta
+	call barra_progreso
+	call btn_anterior
+	call btn_siguiente
+	call init_interface
+
+mov si, 0011d
+p12_manejar_clic:
+
+	call manejar_clic
+	call buscar_btn
+
+	mov al,ds:[0275h]
+	cmp al,10h
+	je p12_btn_falso
+	cmp al,11h
+	je p12_btn_verdadero
+	cmp al,12h
+	je pregunta_11
+	cmp al,13h
+	je pregunta_13
+	jmp p12_manejar_clic
+
+p12_btn_verdadero:
+	mov al,00h
+	mov ds:[0300h+si], al
+	jmp pregunta_13
+p12_btn_falso:
+	mov al,01h
+	mov ds:[0300h+si], al
+	jmp pregunta_13
+
+;--------------------------------------------------------
+; PREGUNTA 13
+;--------------------------------------------------------
+
+pregunta_13:
+	mov al,13d
+
+	; A utilizar para la barra de progreso
+	mov ds:[0220h], al
+	call init_grafico
+	call limpiar_reg
+	call cp13
+	call init_pregunta
+	call texto_pregunta
+	call barra_progreso
+	call btn_anterior
+	call btn_siguiente
+	call init_interface
+
+mov si, 0012d
+p13_manejar_clic:
+
+	call manejar_clic
+	call buscar_btn
+
+	mov al,ds:[0275h]
+	cmp al,10h
+	je p13_btn_falso
+	cmp al,11h
+	je p13_btn_verdadero
+	cmp al,12h
+	je pregunta_12
+	cmp al,13h
+	je pregunta_14
+	jmp p13_manejar_clic
+
+p13_btn_verdadero:
+	mov al,00h
+	mov ds:[0300h+si], al
+	jmp pregunta_14
+p13_btn_falso:
+	mov al,01h
+	mov ds:[0300h+si], al
+	jmp pregunta_14
+
+;--------------------------------------------------------
+; PREGUNTA 14
+;--------------------------------------------------------
+
+pregunta_14:
+	mov al,14d
+
+	; A utilizar para la barra de progreso
+	mov ds:[0220h], al
+	call init_grafico
+	call limpiar_reg
+	call cp14
+	call init_pregunta
+	call texto_pregunta
+	call barra_progreso
+	call btn_anterior
+	call btn_siguiente
+	call init_interface
+
+mov si, 0013d
+p14_manejar_clic:
+
+	call manejar_clic
+	call buscar_btn
+
+	mov al,ds:[0275h]
+	cmp al,10h
+	je p14_btn_falso
+	cmp al,11h
+	je p14_btn_verdadero
+	cmp al,12h
+	je pregunta_13
+	cmp al,13h
+	je pregunta_15
+	jmp p14_manejar_clic
+
+p14_btn_verdadero:
+	mov al,00h
+	mov ds:[0300h+si], al
+	jmp pregunta_15
+p14_btn_falso:
+	mov al,01h
+	mov ds:[0300h+si], al
+	jmp pregunta_15
+
+
+;--------------------------------------------------------
+; PREGUNTA 15
+;--------------------------------------------------------
+
+pregunta_15:
+	mov al,15d
+
+	; A utilizar para la barra de progreso
+	mov ds:[0220h], al
+	call init_grafico
+	call limpiar_reg
+	call cp15
+	call init_pregunta
+	call texto_pregunta
+	call barra_progreso
+	call btn_anterior
+	call btn_siguiente
+	call init_interface
+
+mov si, 0014d
+p15_manejar_clic:
+
+	call manejar_clic
+	call buscar_btn
+
+	mov al,ds:[0275h]
+	cmp al,10h
+	je p15_btn_falso
+	cmp al,11h
+	je p15_btn_verdadero
+	cmp al,12h
+	je pregunta_14
+	cmp al,13h
+	je pregunta_16
+	jmp p15_manejar_clic
+
+p15_btn_verdadero:
+	mov al,00h
+	mov ds:[0300h+si], al
+	jmp pregunta_16
+p15_btn_falso:
+	mov al,01h
+	mov ds:[0300h+si], al
+	jmp pregunta_16
+
+;--------------------------------------------------------
+; PREGUNTA 16
+;--------------------------------------------------------
+
+pregunta_16:
+	mov al,16d
+
+	; A utilizar para la barra de progreso
+	mov ds:[0220h], al
+	call init_grafico
+	call limpiar_reg
+	call cp16
+	call init_pregunta
+	call texto_pregunta
+	call barra_progreso
+	call btn_anterior
+	call btn_siguiente
+	call init_interface
+
+mov si, 0015d
+p16_manejar_clic:
+
+	call manejar_clic
+	call buscar_btn
+
+	mov al,ds:[0275h]
+	cmp al,10h
+	je p16_btn_falso
+	cmp al,11h
+	je p16_btn_verdadero
+	cmp al,12h
+	je pregunta_15
+	cmp al,13h
+	je pregunta_17
+	jmp p16_manejar_clic
+
+p16_btn_verdadero:
+	mov al,00h
+	mov ds:[0300h+si], al
+	jmp pregunta_17
+p16_btn_falso:
+	mov al,01h
+	mov ds:[0300h+si], al
+	jmp pregunta_17
+
+;--------------------------------------------------------
+; PREGUNTA 17
+;--------------------------------------------------------
+
+pregunta_17:
+	mov al,17d
+
+	; A utilizar para la barra de progreso
+	mov ds:[0220h], al
+	call init_grafico
+	call limpiar_reg
+	call cp17
+	call init_pregunta
+	call texto_pregunta
+	call barra_progreso
+	call btn_anterior
+	call btn_siguiente
+	call init_interface
+
+mov si, 0016d
+p17_manejar_clic:
+
+	call manejar_clic
+	call buscar_btn
+
+	mov al,ds:[0275h]
+	cmp al,10h
+	je p17_btn_falso
+	cmp al,11h
+	je p17_btn_verdadero
+	cmp al,12h
+	je pregunta_16
+	cmp al,13h
+	je pregunta_18
+	jmp p17_manejar_clic
+
+p17_btn_verdadero:
+	mov al,00h
+	mov ds:[0300h+si], al
+	jmp pregunta_18
+p17_btn_falso:
+	mov al,01h
+	mov ds:[0300h+si], al
+	jmp pregunta_18
+
+;--------------------------------------------------------
+; PREGUNTA 18
+;--------------------------------------------------------
+
+pregunta_18:
+	mov al,18d
+
+	; A utilizar para la barra de progreso
+	mov ds:[0220h], al
+	call init_grafico
+	call limpiar_reg
+	call cp18
+	call init_pregunta
+	call texto_pregunta
+	call barra_progreso
+	call btn_anterior
+	call btn_siguiente
+	call init_interface
+
+mov si, 0017d
+p18_manejar_clic:
+
+	call manejar_clic
+	call buscar_btn
+
+	mov al,ds:[0275h]
+	cmp al,10h
+	je p18_btn_falso
+	cmp al,11h
+	je p18_btn_verdadero
+	cmp al,12h
+	je pregunta_17
+	cmp al,13h
+	je pregunta_19
+	jmp p18_manejar_clic
+
+p18_btn_verdadero:
+	mov al,00h
+	mov ds:[0300h+si], al
+	jmp pregunta_19
+p18_btn_falso:
+	mov al,01h
+	mov ds:[0300h+si], al
+	jmp pregunta_19
+
+;--------------------------------------------------------
+; PREGUNTA 19
+;--------------------------------------------------------
+
+pregunta_19:
+	mov al,19d
+
+	; A utilizar para la barra de progreso
+	mov ds:[0220h], al
+	call init_grafico
+	call limpiar_reg
+	call cp19
+	call init_pregunta
+	call texto_pregunta
+	call barra_progreso
+	call btn_anterior
+	call btn_siguiente
+	call init_interface
+
+mov si, 0018d
+p19_manejar_clic:
+
+	call manejar_clic
+	call buscar_btn
+
+	mov al,ds:[0275h]
+	cmp al,10h
+	je p19_btn_falso
+	cmp al,11h
+	je p19_btn_verdadero
+	cmp al,12h
+	je pregunta_18
+	cmp al,13h
+	je pregunta_20
+	jmp p19_manejar_clic
+
+p19_btn_verdadero:
+	mov al,00h
+	mov ds:[0300h+si], al
+	jmp pregunta_20
+p19_btn_falso:
+	mov al,01h
+	mov ds:[0300h+si], al
+	jmp pregunta_20
+
+;--------------------------------------------------------
+; PREGUNTA 20
+;--------------------------------------------------------
+
+pregunta_20:
+	mov al,20d
+
+	; A utilizar para la barra de progreso
+	mov ds:[0220h], al
+	call init_grafico
+	call limpiar_reg
+	call cp20
+	call init_pregunta
+	call texto_pregunta
+	call barra_progreso
+	call btn_anterior
+	call btn_siguiente
+	call init_interface
+
+mov si, 0019d
+p20_manejar_clic:
+
+	call manejar_clic
+	call buscar_btn
+
+	mov al,ds:[0275h]
+	cmp al,10h
+	je p20_btn_falso
+	cmp al,11h
+	je p20_btn_verdadero
+	cmp al,12h
+	je pregunta_19
+	cmp al,13h
+	;je pregunta_21
+	je pantalla_fin
+	jmp p20_manejar_clic
+
+p20_btn_verdadero:
+	mov al,00h
+	mov ds:[0300h+si], al
+	; jmp pregunta_21
+	jmp pantalla_fin
+p20_btn_falso:
+	mov al,01h
+	mov ds:[0300h+si], al
+	; jmp pregunta_21
+	jmp pantalla_fin
+;-----------------------------
+;-----------------------------
+; 
 init_pregunta:
 	;Posicionar el cursor
-	mov al, 00h
+	mov al,00h
 	mov ah, 02h
 	mov bh, 00h
 
@@ -157,34 +987,23 @@ init_pregunta:
 	ret
 
 texto_pregunta:
-	mov al, 07fh
+	mov al,07fh
 	call setear_color_texto
+	mov dh, 05d
+	mov dl, 10d
+	mov al, ' '
+	call pc
 itr_texto_pregunta:
 	; Copiar pregunta completa
-	mov al, ds:[0500h + di]
+	mov al,ds:[0500h + di]
 	; El simbolo ; es el delimitador.
-	cmp al, ';'
+	cmp al,';'
 	je fin_texto_pregunta
-	call poner_char
+	call pc
 	inc di
 	jmp itr_texto_pregunta
 fin_texto_pregunta:
 	ret
-
-; limpiar_pantalla:
-; 	mov si, 0000h
-; itr_limpiar_pantalla:
-; 	mov al, ' '
-; 	call poner_char
-; 	inc si
-; 	cmp si, 2000d
-; 	jnz itr_limpiar_pantalla
-; 	mov dh, 25d
-; 	mov dl, 80d
-; 	mov al, ' '
-; 	call poner_char
-; 	call poner_char
-; 	ret
 
 ; DS:[0180H]: columna para el texto
 pantalla_fin:
@@ -195,18 +1014,18 @@ pantalla_fin:
 	mov di, 0000d
 
 	;Espaciamiento inicial
-	mov al, 06d
+	mov al,06d
 	mov ds:[0180h], al
 	mov dl, ds:[0180h]
 
-	mov al, 0ffh
+	mov al,0ffh
 	call setear_color_texto
 	poner_resultado_pregunta:
-		mov al, ds:[0300h + di]
+		mov al,ds:[0300h + di]
 		call color_codig_preg
 		;Espaciamiento horizontal
-		mov al, ' '
-		call poner_char
+		mov al,' '
+		call pc
 
 		call palabra_pregunta
 
@@ -242,10 +1061,10 @@ pantalla_fin_manejar_clic:
 	call manejar_clic
 	call buscar_btn
 
-	mov al, ds:[0275h]
-	cmp al, 10h
+	mov al,ds:[0275h]
+	cmp al,10h
 	je pantalla_fin_btn_salir
-	cmp al, 11h
+	cmp al,11h
 	je pantalla_fin_btn_salir
 	jmp pantalla_fin_manejar_clic
 
@@ -254,13 +1073,13 @@ pantalla_fin_btn_salir:
 
 calificacion_final:
 	mov si, 0000h
-	mov al, 00d
+	mov al,00d
 	mov ds:[0190h], al
 itr_calificacion_final:
-	mov al, ds:[0300h + si]
-	cmp al, 01h
+	mov al,ds:[0300h + si]
+	cmp al,01h
 	jnz continuar_itr_calificacion_final
-	mov al, ds:[0190h]
+	mov al,ds:[0190h]
 	inc al
 	mov ds:[0190h], al
 continuar_itr_calificacion_final:
@@ -272,26 +1091,26 @@ continuar_itr_calificacion_final:
 	mov dh, 25d
 	mov dl, 40d
 
-	mov al, ' '
-	call poner_char
+	mov al,' '
+	call pc
 	call palabra_calificacion
 
 	mov bh, 04d
-	mov al, ds:[0190h]
+	mov al,ds:[0190h]
 	mul bh
 	mov ds:[0190h], al
 	call num_a_texto
 
-	mov al, '/'
-	call poner_char
+	mov al,'/'
+	call pc
 
-	mov al, 100d
+	mov al,100d
 	mov ds:[0190h], al
 	call num_a_texto
 
 	ret
 fin_etiquetas:
-	mov al, 0fh
+	mov al,0fh
 	call setear_color_texto
 
 	mov ax, 0010d
@@ -303,14 +1122,14 @@ fin_etiquetas:
 	mov ax, 0383d
 	mov ds:[0246h], ax
 
-	mov al, 02h
+	mov al,02h
 	call setear_color_pixel
 	call dibujar_rectangulo
 
 	mov dh, 23d
 	mov dl, 05d
-	mov al, ' '
-	call poner_char
+	mov al,' '
+	call pc
 
 	call palabra_correcta
 
@@ -323,14 +1142,14 @@ fin_etiquetas:
 	mov ax, 00415d
 	mov ds:[0246h], ax
 
-	mov al, 04h
+	mov al,04h
 	call setear_color_pixel
 	call dibujar_rectangulo
 
 	mov dh, 25d
 	mov dl, 05d
-	mov al, ' '
-	call poner_char
+	mov al,' '
+	call pc
 
 	call palabra_fallida
 
@@ -343,38 +1162,38 @@ fin_etiquetas:
 	mov ax, 00446d
 	mov ds:[0246h], ax
 
-	mov al, 0eh
+	mov al,0eh
 	call setear_color_pixel
 	call dibujar_rectangulo
 
 	mov dh, 27d
 	mov dl, 05d
-	mov al, ' '
-	call poner_char
+	mov al,' '
+	call pc
 
 	call palabra_sin_contestar
 
 	ret
 
 color_codig_preg:
-	cmp al, 00h
+	cmp al,00h
 	je color_rojo
-	cmp al, 01h
+	cmp al,01h
 	je color_verde
-	cmp al, 02h
+	cmp al,02h
 	je color_amarillo
 	ret
 
 color_rojo:
-	mov al, 0f4h
+	mov al,0f4h
 	call setear_color_texto
 	ret
 color_verde:
-	mov al, 0f2h
+	mov al,0f2h
 	call setear_color_texto
 	ret
 color_amarillo:
-	mov al, 0feh
+	mov al,0feh
 	call setear_color_texto
 	ret
 
@@ -383,6 +1202,8 @@ color_amarillo:
 ;--------------------------------------------------------
 
 manejar_clic:
+	mov al,00h
+	mov ds:[0275h], al
 	mov ax, 0005h
 	mov bx, 0000h	; clic izquierdo
 	int 33h 		; interrupcion de manejo de mouse
@@ -392,14 +1213,40 @@ manejar_clic:
 	ret
 
 buscar_btn:
+	call verificar_btn_siguiente
+	call verificar_btn_anterior
 	call verificar_btn_verdadero
 	call verificar_btn_falso
 	ret
 
 verificar_btn_siguiente:
+	;580 - 640 en x
+	;240 - 270 en y
+	cmp cx, 0580d
+	jb salir_verificar_btn_verdadero
+	cmp cx, 0640d
+	ja salir_verificar_btn_verdadero
+	cmp dx, 0240d
+	jb salir_verificar_btn_verdadero
+	cmp dx, 0270d
+	ja salir_verificar_btn_verdadero
+	mov al,13h
+	mov ds:[0275h], al
 	ret
 
 verificar_btn_anterior:
+	;000 - 060 en x
+	;240 - 270 en y
+	cmp cx, 0000d
+	jb salir_verificar_btn_verdadero
+	cmp cx, 060d
+	ja salir_verificar_btn_verdadero
+	cmp dx, 0240d
+	jb salir_verificar_btn_verdadero
+	cmp dx, 0270d
+	ja salir_verificar_btn_verdadero
+	mov al,12h
+	mov ds:[0275h], al
 	ret
 
 verificar_btn_verdadero:
@@ -413,7 +1260,7 @@ verificar_btn_verdadero:
 	jb salir_verificar_btn_verdadero
 	cmp dx, 0435d
 	ja salir_verificar_btn_verdadero
-	mov al, 11h
+	mov al,11h
 	mov ds:[0275h], al
 salir_verificar_btn_verdadero:
 	ret
@@ -429,7 +1276,7 @@ verificar_btn_falso:
 	jb salir_verificar_btn_falso
 	cmp dx, 0435d 
 	ja salir_verificar_btn_falso
-	mov al, 10h
+	mov al,10h
 	mov ds:[0275h], al
 salir_verificar_btn_falso:
 	ret
@@ -451,13 +1298,9 @@ limpiar_reg:
 init_grafico:
 	; modo grafico 640x480
 	mov ah, 00h
-	mov al, 12h
+	mov al,12h
 	int 10h
 
-	; manejo del mouse
-	mov ax, 0000h
-	int 33h
-	
 	; mostrar el puntero
 	mov ax, 0001h
 	int 33h
@@ -466,7 +1309,7 @@ init_grafico:
 
 poner_pixel:
 	mov ah, 0ch
-	mov al, ds:[0210h]
+	mov al,ds:[0210h]
 	mov bh, 00h
 	int 10h
 	ret
@@ -527,7 +1370,7 @@ barra_progreso:
 	mul bl
 	mov ds:[0242h], ax
 
-	mov al, 0bh
+	mov al,0bh
 	call setear_color_pixel
 	call dibujar_rectangulo
 
@@ -537,7 +1380,7 @@ barra_progreso:
 	mov cx, 0640d ; fin de la pantalla
 	mov ds:[0242h], cx
 
-	mov al, 03h
+	mov al,03h
 	call setear_color_pixel
 	call dibujar_rectangulo
 
@@ -545,7 +1388,7 @@ barra_progreso:
 
 init_texto:
 	mov ah, 00h
-	mov al, 03h
+	mov al,03h
 	int 10h
 	ret
 
@@ -555,13 +1398,13 @@ init_texto:
 ; DS:[0197h] ; 3er digito
 
 num_a_texto:
-	mov al, 00h
+	mov al,00h
 
 	mov ds:[0195h], al
 	mov ds:[0196h], al
 	mov ds:[0197h], al
 
-	mov al, ds:[0190h]
+	mov al,ds:[0190h]
 	mov si, 0003h
 sacar_digito:
 	mov bh, 10d
@@ -571,19 +1414,19 @@ sacar_digito:
 	add bl, 30h
 	mov ds:[0195h+si], bl
 	dec si
-	cmp al, 00h
+	cmp al,00h
 	je mostrar_digitos
 	cmp si, 0000h
 	jnz sacar_digito
 mostrar_digitos:
-	mov al, ds:[0195h+si]
+	mov al,ds:[0195h+si]
 	inc si
-	call poner_char
+	call pc
 	cmp si, 0004h
 	jnz mostrar_digitos
 	ret
 
-poner_char:
+pc:
 	mov ah, 09h
 	mov bh, 00h
 	mov bl, ds:[0205h]
@@ -593,13 +1436,13 @@ poner_char:
 	ret
 
 avanzar:
-	mov al, 00h
+	mov al,00h
 	mov ah, 02h
 	mov bh, 00h
 	;Pasar a la siguiente fila
-	cmp dl, 78d
+	cmp dl, 70d
 	jne fin_avanzar
-	mov dl, 02d
+	mov dl, 10d
 	inc dh
 fin_avanzar:
 	inc dl
@@ -609,6 +1452,38 @@ fin_avanzar:
 ;------------------------------
 ; Logica de los botones y graficos
 ;------------------------------
+
+;---- Boton de Siguiente ----
+
+
+btn_siguiente:
+	mov al,03h
+	call setear_color_pixel
+	mov ax, 0580d
+	mov ds:[0240h], ax
+	mov ax, 0640d
+	mov ds:[0242h], ax
+	mov ax, 0240d
+	mov ds:[0244h], ax
+	mov ax, 0270d
+	mov ds:[0246h], ax
+
+	call dibujar_rectangulo
+	ret
+btn_anterior:
+	mov al,03h
+	call setear_color_pixel
+	mov ax, 0000d
+	mov ds:[0240h], ax
+	mov ax, 0060d
+	mov ds:[0242h], ax
+	mov ax, 0240d
+	mov ds:[0244h], ax
+	mov ax, 0270d
+	mov ds:[0246h], ax
+
+	call dibujar_rectangulo
+	ret
 
 ;para el boton de falso
 blanco:
@@ -720,7 +1595,7 @@ ret
 ;este es para las lineas del efecto 3d
 pixel3: 
 	mov ah, 0ch
-mov al, 1111b ;color blanco
+mov al,1111b ;color blanco
 mov bh, 00 ;la pagina en la que estoy trabajando
 int 10h
 ret
@@ -730,39 +1605,39 @@ letras:
 	mov dh, 77d
 	mov dl, 55d
 	call mover
-	mov al, "v"
+	mov al,"v"
 	call caracter
 	call mover
 
-	mov al, "e"
+	mov al,"e"
 	call caracter
 	call mover
 
-	mov al, "r"
+	mov al,"r"
 	call caracter
 	call mover 
 
-	mov al, "d"
+	mov al,"d"
 	call caracter
 	call mover
 
-	mov al, "a"
+	mov al,"a"
 	call caracter
 	call mover
 
-	mov al, "d"
+	mov al,"d"
 	call caracter
 	call mover
 
-	mov al, "e"
+	mov al,"e"
 	call caracter
 	call mover
 
-	mov al, "r"
+	mov al,"r"
 	call caracter
 	call mover
 
-	mov al, "o"
+	mov al,"o"
 	call caracter
 	call mover
 	ret
@@ -772,23 +1647,23 @@ letras2:
 	mov dh, 77d
 	mov dl, 72d
 	call mover
-	mov al, "f"
+	mov al,"f"
 	call caracter
 	call mover
 
-	mov al, "a"
+	mov al,"a"
 	call caracter
 	call mover
 
-	mov al, "l"
+	mov al,"l"
 	call caracter
 	call mover 
 
-	mov al, "s"
+	mov al,"s"
 	call caracter
 	call mover
 
-	mov al, "o"
+	mov al,"o"
 	call caracter
 	call mover
 	ret
@@ -811,8941 +1686,8883 @@ mover:
 ; Caracteres que conforman las preguntas.
 ;--------------------------------------------------------
 
-guardar_char:
+gc:
 	mov ds:[0500h + di], al
 	inc di
 	ret
 
 palabra_calificacion:
-    mov al, 'C'
-    call poner_char
-    mov al, 'a'
-    call poner_char
-    mov al, 'l'
-    call poner_char
-    mov al, 'i'
-    call poner_char
-    mov al, 'f'
-    call poner_char
-    mov al, 'i'
-    call poner_char
-    mov al, 'c'
-    call poner_char
-    mov al, 'a'
-    call poner_char
-    mov al, 'c'
-    call poner_char
-    mov al, 'i'
-    call poner_char
-    mov al, 'o'
-    call poner_char
-    mov al, 'n'
-    call poner_char
-    mov al, ':'
-    call poner_char
-    mov al, ' '
-    call poner_char
+    mov al,'C'
+    call pc
+    mov al,'a'
+    call pc
+    mov al,'l'
+    call pc
+    mov al,'i'
+    call pc
+    mov al,'f'
+    call pc
+    mov al,'i'
+    call pc
+    mov al,'c'
+    call pc
+    mov al,'a'
+    call pc
+    mov al,'c'
+    call pc
+    mov al,'i'
+    call pc
+    mov al,'o'
+    call pc
+    mov al,'n'
+    call pc
+    mov al,':'
+    call pc
+    mov al,' '
+    call pc
     ret
 
 palabra_correcta:
-	mov al, 'C'
-	call poner_char
-	mov al, 'o'
-	call poner_char
-	mov al, 'r'
-	call poner_char
-	mov al, 'r'
-	call poner_char
-	mov al, 'e'
-	call poner_char
-	mov al, 'c'
-	call poner_char
-	mov al, 't'
-	call poner_char
-	mov al, 'a'
-	call poner_char
+	mov al,'C'
+	call pc
+	mov al,'o'
+	call pc
+	mov al,'r'
+	call pc
+	mov al,'r'
+	call pc
+	mov al,'e'
+	call pc
+	mov al,'c'
+	call pc
+	mov al,'t'
+	call pc
+	mov al,'a'
+	call pc
 	ret
 palabra_fallida:
-    mov al, 'F'
-    call poner_char
-    mov al, 'a'
-    call poner_char
-    mov al, 'l'
-    call poner_char
-    mov al, 'l'
-    call poner_char
-    mov al, 'i'
-    call poner_char
-    mov al, 'd'
-    call poner_char
-    mov al, 'a'
-    call poner_char
+    mov al,'F'
+    call pc
+    mov al,'a'
+    call pc
+    mov al,'l'
+    call pc
+    mov al,'l'
+    call pc
+    mov al,'i'
+    call pc
+    mov al,'d'
+    call pc
+    mov al,'a'
+    call pc
     ret
 palabra_sin_contestar:
-    mov al, 'S'
-    call poner_char
-    mov al, 'i'
-    call poner_char
-    mov al, 'n'
-    call poner_char
-    mov al, ' '
-    call poner_char
-    mov al, 'c'
-    call poner_char
-    mov al, 'o'
-    call poner_char
-    mov al, 'n'
-    call poner_char
-    mov al, 't'
-    call poner_char
-    mov al, 'e'
-    call poner_char
-    mov al, 's'
-    call poner_char
-    mov al, 't'
-    call poner_char
-    mov al, 'a'
-    call poner_char
-    mov al, 'r'
-    call poner_char
+    mov al,'S'
+    call pc
+    mov al,'i'
+    call pc
+    mov al,'n'
+    call pc
+    mov al,' '
+    call pc
+    mov al,'c'
+    call pc
+    mov al,'o'
+    call pc
+    mov al,'n'
+    call pc
+    mov al,'t'
+    call pc
+    mov al,'e'
+    call pc
+    mov al,'s'
+    call pc
+    mov al,'t'
+    call pc
+    mov al,'a'
+    call pc
+    mov al,'r'
+    call pc
     ret
 palabra_pregunta:
-	mov al, 'P'
-	call poner_char
-	mov al, 'r'
-	call poner_char
-	mov al, 'e'
-	call poner_char
-	mov al, 'g'
-	call poner_char
-	mov al, 'u'
-	call poner_char
-	mov al, 'n'
-	call poner_char
-	mov al, 't'
-	call poner_char
-	mov al, 'a'
-	call poner_char
-	mov al, ' '
-	call poner_char
+	mov al,'P'
+	call pc
+	mov al,'r'
+	call pc
+	mov al,'e'
+	call pc
+	mov al,'g'
+	call pc
+	mov al,'u'
+	call pc
+	mov al,'n'
+	call pc
+	mov al,'t'
+	call pc
+	mov al,'a'
+	call pc
+	mov al,' '
+	call pc
 	ret
 
-copiar_pregunta1:
-	;Comienza la pregunta 1
-	mov al, 'L'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'f'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, '0'
-	call guardar_char
-	mov al, '2'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'I'
-	call guardar_char
-	mov al, 'N'
-	call guardar_char
-	mov al, 'T'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, '1'
-	call guardar_char
-	mov al, '0'
-	call guardar_char
-	mov al, ','
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, '.'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'D'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'B'
-	call guardar_char
-	mov al, 'H'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'g'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ','
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'D'
-	call guardar_char
-	mov al, 'H'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'f'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'y'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'D'
-	call guardar_char
-	mov al, 'L'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'f'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, '.'
-	call guardar_char
-	mov al, ';'
-	call guardar_char
+cp1:
+mov al,'L'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'f'
+call gc
+mov al,'u'
+call gc
+mov al,'n'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'0'
+call gc
+mov al,'2'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'I'
+call gc
+mov al,'N'
+call gc
+mov al,'T'
+call gc
+mov al,' '
+call gc
+mov al,'1'
+call gc
+mov al,'0'
+call gc
+mov al,','
+call gc
+mov al,' '
+call gc
+mov al,'n'
+call gc
+mov al,'o'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'e'
+call gc
+mov al,'r'
+call gc
+mov al,'m'
+call gc
+mov al,'i'
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'l'
+call gc
+mov al,'o'
+call gc
+mov al,'c'
+call gc
+mov al,'a'
+call gc
+mov al,'r'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'a'
+call gc
+mov al,'d'
+call gc
+mov al,'a'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'u'
+call gc
+mov al,'r'
+call gc
+mov al,'s'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,'.'
+call gc
+mov al,' '
+call gc
+mov al,'D'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'B'
+call gc
+mov al,'H'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'l'
+call gc
+mov al,'o'
+call gc
+mov al,'c'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'n'
+call gc
+mov al,'u'
+call gc
+mov al,'m'
+call gc
+mov al,'e'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'a'
+call gc
+mov al,'g'
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'a'
+call gc
+mov al,','
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'D'
+call gc
+mov al,'H'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'f'
+call gc
+mov al,'i'
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'a'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,'c'
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,'r'
+call gc
+mov al,' '
+call gc
+mov al,'y'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'D'
+call gc
+mov al,'L'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'o'
+call gc
+mov al,'s'
+call gc
+mov al,'i'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'a'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,'c'
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,'r'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'f'
+call gc
+mov al,'i'
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,'.'
+call gc
+mov al,';'
+call gc
 
 	ret
-	;Termina la pregunta 1
-
-copiar_pregunta2:
-	;Comienza la pregunta 2
-	mov al, 'R'
-	call guardar_char
-	mov al, 'O'
-	call guardar_char
-	mov al, 'M'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'B'
-	call guardar_char
-	mov al, 'I'
-	call guardar_char
-	mov al, 'O'
-	call guardar_char
-	mov al, 'S'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'g'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'v'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ','
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'q'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ','
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'q'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'v'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'f'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'b'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'f'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'y'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'P'
-	call guardar_char
-	mov al, 'C'
-	call guardar_char
-	mov al, '.'
-	call guardar_char
-	mov al, ';'
-	call guardar_char
+cp2:
+mov al,'R'
+call gc
+mov al,'O'
+call gc
+mov al,'M'
+call gc
+mov al,' '
+call gc
+mov al,'B'
+call gc
+mov al,'I'
+call gc
+mov al,'O'
+call gc
+mov al,'S'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'u'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'r'
+call gc
+mov al,'c'
+call gc
+mov al,'u'
+call gc
+mov al,'i'
+call gc
+mov al,'t'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,'g'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,'d'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'m'
+call gc
+mov al,'e'
+call gc
+mov al,'m'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,'i'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'n'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'v'
+call gc
+mov al,'o'
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,'t'
+call gc
+mov al,'i'
+call gc
+mov al,'l'
+call gc
+mov al,','
+call gc
+mov al,' '
+call gc
+mov al,'q'
+call gc
+mov al,'u'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'i'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'r'
+call gc
+mov al,'u'
+call gc
+mov al,'t'
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'a'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,'c'
+call gc
+mov al,'e'
+call gc
+mov al,'d'
+call gc
+mov al,'i'
+call gc
+mov al,'m'
+call gc
+mov al,'i'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'o'
+call gc
+mov al,'s'
+call gc
+mov al,','
+call gc
+mov al,' '
+call gc
+mov al,'q'
+call gc
+mov al,'u'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,'v'
+call gc
+mov al,'e'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'t'
+call gc
+mov al,'o'
+call gc
+mov al,'d'
+call gc
+mov al,'a'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'f'
+call gc
+mov al,'u'
+call gc
+mov al,'n'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'b'
+call gc
+mov al,'a'
+call gc
+mov al,'s'
+call gc
+mov al,'i'
+call gc
+mov al,'c'
+call gc
+mov al,'a'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'a'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'i'
+call gc
+mov al,'f'
+call gc
+mov al,'e'
+call gc
+mov al,'r'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'a'
+call gc
+mov al,'r'
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,'d'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'y'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'a'
+call gc
+mov al,'l'
+call gc
+mov al,'i'
+call gc
+mov al,'d'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'u'
+call gc
+mov al,' '
+call gc
+mov al,'P'
+call gc
+mov al,'C'
+call gc
+mov al,'.'
+call gc
+mov al,';'
+call gc
 
 	ret
-	;Termina la pregunta 2
-
-copiar_pregunta3:
-	;Comienza la pregunta 3
-	mov al, 'U'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'f'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ','
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'q'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'j'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'g'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'y'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'b'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'g'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'j'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'b'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'v'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, '.'
-	call guardar_char
-	mov al, ';'
-	call guardar_char
+cp3:
+mov al,'U'
+call gc
+mov al,'n'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,'r'
+call gc
+mov al,'r'
+call gc
+mov al,'u'
+call gc
+mov al,'p'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'u'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'m'
+call gc
+mov al,'e'
+call gc
+mov al,'c'
+call gc
+mov al,'a'
+call gc
+mov al,'n'
+call gc
+mov al,'i'
+call gc
+mov al,'s'
+call gc
+mov al,'m'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'t'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,'n'
+call gc
+mov al,'s'
+call gc
+mov al,'f'
+call gc
+mov al,'e'
+call gc
+mov al,'r'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,'l'
+call gc
+mov al,','
+call gc
+mov al,' '
+call gc
+mov al,'q'
+call gc
+mov al,'u'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'a'
+call gc
+mov al,'c'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'a'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'m'
+call gc
+mov al,'i'
+call gc
+mov al,'c'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,'p'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,'c'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,'a'
+call gc
+mov al,'d'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'j'
+call gc
+mov al,'e'
+call gc
+mov al,'c'
+call gc
+mov al,'u'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'n'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,'m'
+call gc
+mov al,'a'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'u'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,'g'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,'m'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'y'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'o'
+call gc
+mov al,'b'
+call gc
+mov al,'l'
+call gc
+mov al,'i'
+call gc
+mov al,'g'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'j'
+call gc
+mov al,'e'
+call gc
+mov al,'c'
+call gc
+mov al,'u'
+call gc
+mov al,'t'
+call gc
+mov al,'a'
+call gc
+mov al,'r'
+call gc
+mov al,' '
+call gc
+mov al,'u'
+call gc
+mov al,'n'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'u'
+call gc
+mov al,'b'
+call gc
+mov al,'r'
+call gc
+mov al,'u'
+call gc
+mov al,'t'
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'e'
+call gc
+mov al,'r'
+call gc
+mov al,'v'
+call gc
+mov al,'i'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,'r'
+call gc
+mov al,'r'
+call gc
+mov al,'u'
+call gc
+mov al,'p'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,'.'
+call gc
+mov al,';'
+call gc
 
 	ret
-	;Termina la pregunta 3
-
-copiar_pregunta4:
-	;Comienza la pregunta 4
-	mov al, 'L'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'b'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'v'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'f'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'b'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'I'
-	call guardar_char
-	mov al, 'S'
-	call guardar_char
-	mov al, 'R'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'y'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, '2'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'b'
-	call guardar_char
-	mov al, 'y'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'g'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ','
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'x'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, '2'
-	call guardar_char
-	mov al, '5'
-	call guardar_char
-	mov al, '6'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'v'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, '.'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, ';'
-	call guardar_char
+cp4:
+mov al,'L'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'t'
+call gc
+mov al,'a'
+call gc
+mov al,'b'
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'v'
+call gc
+mov al,'e'
+call gc
+mov al,'c'
+call gc
+mov al,'t'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,'r'
+call gc
+mov al,'r'
+call gc
+mov al,'u'
+call gc
+mov al,'p'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'c'
+call gc
+mov al,'u'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'t'
+call gc
+mov al,'o'
+call gc
+mov al,'d'
+call gc
+mov al,'a'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'i'
+call gc
+mov al,'r'
+call gc
+mov al,'e'
+call gc
+mov al,'c'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'f'
+call gc
+mov al,'i'
+call gc
+mov al,'s'
+call gc
+mov al,'i'
+call gc
+mov al,'c'
+call gc
+mov al,'a'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'u'
+call gc
+mov al,'b'
+call gc
+mov al,'r'
+call gc
+mov al,'u'
+call gc
+mov al,'t'
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'a'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,'r'
+call gc
+mov al,'r'
+call gc
+mov al,'u'
+call gc
+mov al,'p'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'I'
+call gc
+mov al,'S'
+call gc
+mov al,'R'
+call gc
+mov al,' '
+call gc
+mov al,'y'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'n'
+call gc
+mov al,'e'
+call gc
+mov al,'c'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,'i'
+call gc
+mov al,'t'
+call gc
+mov al,'a'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'2'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'o'
+call gc
+mov al,'c'
+call gc
+mov al,'a'
+call gc
+mov al,'l'
+call gc
+mov al,'i'
+call gc
+mov al,'d'
+call gc
+mov al,'a'
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'m'
+call gc
+mov al,'e'
+call gc
+mov al,'m'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,'i'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'u'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'b'
+call gc
+mov al,'y'
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'a'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'g'
+call gc
+mov al,'u'
+call gc
+mov al,'a'
+call gc
+mov al,'r'
+call gc
+mov al,'d'
+call gc
+mov al,'a'
+call gc
+mov al,'r'
+call gc
+mov al,' '
+call gc
+mov al,'u'
+call gc
+mov al,'n'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'i'
+call gc
+mov al,'r'
+call gc
+mov al,'e'
+call gc
+mov al,'c'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'m'
+call gc
+mov al,'p'
+call gc
+mov al,'l'
+call gc
+mov al,'e'
+call gc
+mov al,'t'
+call gc
+mov al,'a'
+call gc
+mov al,','
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'x'
+call gc
+mov al,'i'
+call gc
+mov al,'s'
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'o'
+call gc
+mov al,'l'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'2'
+call gc
+mov al,'5'
+call gc
+mov al,'6'
+call gc
+mov al,' '
+call gc
+mov al,'v'
+call gc
+mov al,'e'
+call gc
+mov al,'c'
+call gc
+mov al,'t'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,'r'
+call gc
+mov al,'r'
+call gc
+mov al,'u'
+call gc
+mov al,'p'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,'.'
+call gc
+mov al,' '
+call gc
+mov al,';'
+call gc
 
 	ret
-	;Termina la pregunta 4
-
-copiar_pregunta5:
-	;Comienza la pregunta 5
-	mov al, 'E'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'b'
-	call guardar_char
-	mov al, 'j'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'v'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'h'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'w'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ','
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'g'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'v'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, '8'
-	call guardar_char
-	mov al, '0'
-	call guardar_char
-	mov al, '5'
-	call guardar_char
-	mov al, '9'
-	call guardar_char
-	mov al, ','
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'g'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'f'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'f'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'b'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'j'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, ','
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'b'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'v'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'q'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, '.'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'A'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'h'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ','
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'v'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, ','
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'q'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, '.'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, ';'
-	call guardar_char
+cp5:
+mov al,'E'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'o'
+call gc
+mov al,'b'
+call gc
+mov al,'j'
+call gc
+mov al,'e'
+call gc
+mov al,'t'
+call gc
+mov al,'i'
+call gc
+mov al,'v'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,'r'
+call gc
+mov al,'r'
+call gc
+mov al,'u'
+call gc
+mov al,'p'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,' '
+call gc
+mov al,'h'
+call gc
+mov al,'a'
+call gc
+mov al,'r'
+call gc
+mov al,'d'
+call gc
+mov al,'w'
+call gc
+mov al,'a'
+call gc
+mov al,'r'
+call gc
+mov al,'e'
+call gc
+mov al,','
+call gc
+mov al,' '
+call gc
+mov al,'g'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'e'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,'d'
+call gc
+mov al,'a'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'t'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,'v'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'8'
+call gc
+mov al,'0'
+call gc
+mov al,'5'
+call gc
+mov al,'9'
+call gc
+mov al,','
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,'r'
+call gc
+mov al,'e'
+call gc
+mov al,'g'
+call gc
+mov al,'i'
+call gc
+mov al,'r'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'f'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,'m'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'e'
+call gc
+mov al,'f'
+call gc
+mov al,'i'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'t'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,'b'
+call gc
+mov al,'a'
+call gc
+mov al,'j'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'m'
+call gc
+mov al,'i'
+call gc
+mov al,'c'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,'p'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,'c'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,'a'
+call gc
+mov al,'d'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,','
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'u'
+call gc
+mov al,'a'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,'s'
+call gc
+mov al,'u'
+call gc
+mov al,'l'
+call gc
+mov al,'t'
+call gc
+mov al,'a'
+call gc
+mov al,'b'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'a'
+call gc
+mov al,'d'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'i'
+call gc
+mov al,'s'
+call gc
+mov al,'p'
+call gc
+mov al,'o'
+call gc
+mov al,'s'
+call gc
+mov al,'i'
+call gc
+mov al,'t'
+call gc
+mov al,'i'
+call gc
+mov al,'v'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'i'
+call gc
+mov al,' '
+call gc
+mov al,'q'
+call gc
+mov al,'u'
+call gc
+mov al,'e'
+call gc
+mov al,'r'
+call gc
+mov al,'i'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'m'
+call gc
+mov al,'u'
+call gc
+mov al,'n'
+call gc
+mov al,'i'
+call gc
+mov al,'c'
+call gc
+mov al,'a'
+call gc
+mov al,'r'
+call gc
+mov al,'s'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,'.'
+call gc
+mov al,' '
+call gc
+mov al,'A'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'e'
+call gc
+mov al,'r'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'h'
+call gc
+mov al,'i'
+call gc
+mov al,'p'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,'d'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,'r'
+call gc
+mov al,'r'
+call gc
+mov al,'u'
+call gc
+mov al,'p'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,','
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'a'
+call gc
+mov al,'d'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'i'
+call gc
+mov al,'s'
+call gc
+mov al,'p'
+call gc
+mov al,'o'
+call gc
+mov al,'s'
+call gc
+mov al,'i'
+call gc
+mov al,'t'
+call gc
+mov al,'i'
+call gc
+mov al,'v'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,'r'
+call gc
+mov al,'r'
+call gc
+mov al,'u'
+call gc
+mov al,'m'
+call gc
+mov al,'p'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'a'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'m'
+call gc
+mov al,'i'
+call gc
+mov al,'c'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,'p'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,'c'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,'a'
+call gc
+mov al,'d'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,','
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'o'
+call gc
+mov al,'l'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'u'
+call gc
+mov al,'a'
+call gc
+mov al,'n'
+call gc
+mov al,'d'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'r'
+call gc
+mov al,'e'
+call gc
+mov al,'q'
+call gc
+mov al,'u'
+call gc
+mov al,'i'
+call gc
+mov al,'e'
+call gc
+mov al,'r'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'u'
+call gc
+mov al,'n'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'m'
+call gc
+mov al,'u'
+call gc
+mov al,'n'
+call gc
+mov al,'i'
+call gc
+mov al,'c'
+call gc
+mov al,'a'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,'.'
+call gc
+mov al,' '
+call gc
+mov al,';'
+call gc
 
 	ret
-	;Termina la pregunta 5
-
-copiar_pregunta6:
-	;Comienza la pregunta 6
-	mov al, 'L'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'f'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, '0'
-	call guardar_char
-	mov al, 'D'
-	call guardar_char
-	mov al, 'H'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, '1'
-	call guardar_char
-	mov al, '0'
-	call guardar_char
-	mov al, 'H'
-	call guardar_char
-	mov al, ','
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'x'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'y'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'f'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, '0'
-	call guardar_char
-	mov al, 'C'
-	call guardar_char
-	mov al, ','
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'y'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'v'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'v'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'g'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'f'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ':'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'E'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'B'
-	call guardar_char
-	mov al, 'L'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'x'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ','
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'B'
-	call guardar_char
-	mov al, 'H'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'g'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ','
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'C'
-	call guardar_char
-	mov al, 'X'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'x'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ','
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'y'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'D'
-	call guardar_char
-	mov al, 'X'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'x'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, '.'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, ';'
-	call guardar_char
+cp6:
+mov al,'L'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'f'
+call gc
+mov al,'u'
+call gc
+mov al,'n'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'0'
+call gc
+mov al,'D'
+call gc
+mov al,'H'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,' '
+call gc
+mov al,'1'
+call gc
+mov al,'0'
+call gc
+mov al,'H'
+call gc
+mov al,','
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'e'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'u'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'i'
+call gc
+mov al,'x'
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'y'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'f'
+call gc
+mov al,'u'
+call gc
+mov al,'n'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,'r'
+call gc
+mov al,'i'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'0'
+call gc
+mov al,'C'
+call gc
+mov al,','
+call gc
+mov al,' '
+call gc
+mov al,'y'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,'v'
+call gc
+mov al,'u'
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,'v'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'i'
+call gc
+mov al,'g'
+call gc
+mov al,'u'
+call gc
+mov al,'i'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'f'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,'m'
+call gc
+mov al,'a'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,':'
+call gc
+mov al,' '
+call gc
+mov al,'E'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'B'
+call gc
+mov al,'L'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'l'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'i'
+call gc
+mov al,'x'
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,','
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'B'
+call gc
+mov al,'H'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'n'
+call gc
+mov al,'u'
+call gc
+mov al,'m'
+call gc
+mov al,'e'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'a'
+call gc
+mov al,'g'
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'a'
+call gc
+mov al,','
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'C'
+call gc
+mov al,'X'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'o'
+call gc
+mov al,'s'
+call gc
+mov al,'i'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'i'
+call gc
+mov al,'x'
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'e'
+call gc
+mov al,'a'
+call gc
+mov al,','
+call gc
+mov al,' '
+call gc
+mov al,'y'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'D'
+call gc
+mov al,'X'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'e'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'i'
+call gc
+mov al,'x'
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,'.'
+call gc
+mov al,' '
+call gc
+mov al,';'
+call gc
 
 	ret
-	;Termina la pregunta 6
-
-copiar_pregunta7:
-	;Comienza la pregunta 7
-	mov al, 'L'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'v'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'j'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'b'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ':'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'P'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'v'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'v'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, '.'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'R'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'g'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, '.'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'P'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'j'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'g'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'z'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'g'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, '.'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'F'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'g'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, '.'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'A'
-	call guardar_char
-	mov al, 'y'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'g'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, '.'
-	call guardar_char
-	mov al, ';'
-	call guardar_char
+cp7:
+mov al,'L'
+call gc
+mov al,'a'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'v'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'a'
+call gc
+mov al,'j'
+call gc
+mov al,'a'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'u'
+call gc
+mov al,'s'
+call gc
+mov al,'a'
+call gc
+mov al,'r'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'u'
+call gc
+mov al,'b'
+call gc
+mov al,'r'
+call gc
+mov al,'u'
+call gc
+mov al,'t'
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'a'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,':'
+call gc
+mov al,' '
+call gc
+mov al,'P'
+call gc
+mov al,'u'
+call gc
+mov al,'e'
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'e'
+call gc
+mov al,'r'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,'m'
+call gc
+mov al,'a'
+call gc
+mov al,'d'
+call gc
+mov al,'a'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'v'
+call gc
+mov al,'a'
+call gc
+mov al,'r'
+call gc
+mov al,'i'
+call gc
+mov al,'a'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'v'
+call gc
+mov al,'e'
+call gc
+mov al,'c'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,'.'
+call gc
+mov al,' '
+call gc
+mov al,'R'
+call gc
+mov al,'e'
+call gc
+mov al,'d'
+call gc
+mov al,'u'
+call gc
+mov al,'c'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'a'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'i'
+call gc
+mov al,'d'
+call gc
+mov al,'a'
+call gc
+mov al,'d'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'d'
+call gc
+mov al,'i'
+call gc
+mov al,'g'
+call gc
+mov al,'o'
+call gc
+mov al,'.'
+call gc
+mov al,' '
+call gc
+mov al,'P'
+call gc
+mov al,'e'
+call gc
+mov al,'r'
+call gc
+mov al,'m'
+call gc
+mov al,'i'
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'u'
+call gc
+mov al,'n'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'m'
+call gc
+mov al,'e'
+call gc
+mov al,'j'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,' '
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,'g'
+call gc
+mov al,'a'
+call gc
+mov al,'n'
+call gc
+mov al,'i'
+call gc
+mov al,'z'
+call gc
+mov al,'a'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,'g'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,'m'
+call gc
+mov al,'a'
+call gc
+mov al,'.'
+call gc
+mov al,' '
+call gc
+mov al,'F'
+call gc
+mov al,'a'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'l'
+call gc
+mov al,'i'
+call gc
+mov al,'t'
+call gc
+mov al,'a'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,'p'
+call gc
+mov al,'u'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,'g'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,'m'
+call gc
+mov al,'a'
+call gc
+mov al,'.'
+call gc
+mov al,' '
+call gc
+mov al,'A'
+call gc
+mov al,'y'
+call gc
+mov al,'u'
+call gc
+mov al,'d'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'a'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'m'
+call gc
+mov al,'a'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'i'
+call gc
+mov al,'m'
+call gc
+mov al,'i'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,'g'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,'m'
+call gc
+mov al,'a'
+call gc
+mov al,'.'
+call gc
+mov al,';'
+call gc
 
 	ret
-	;Termina la pregunta 7
-
-copiar_pregunta8:
-	;Comienza la pregunta 8
-	mov al, 'E'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'R'
-	call guardar_char
-	mov al, 'O'
-	call guardar_char
-	mov al, 'M'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'g'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'h'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'q'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'g'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'y'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'q'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'f'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'v'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, '.'
-	call guardar_char
-	mov al, ';'
-	call guardar_char
+cp8:
+mov al,'E'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'R'
+call gc
+mov al,'O'
+call gc
+mov al,'M'
+call gc
+mov al,' '
+call gc
+mov al,'g'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'e'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,'d'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'a'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,'c'
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,'r'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'u'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'h'
+call gc
+mov al,'i'
+call gc
+mov al,'p'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'m'
+call gc
+mov al,'e'
+call gc
+mov al,'m'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,'i'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'q'
+call gc
+mov al,'u'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'g'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'e'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'t'
+call gc
+mov al,'o'
+call gc
+mov al,'d'
+call gc
+mov al,'a'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'a'
+call gc
+mov al,'l'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'y'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'t'
+call gc
+mov al,'o'
+call gc
+mov al,'d'
+call gc
+mov al,'o'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'o'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'a'
+call gc
+mov al,'d'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'q'
+call gc
+mov al,'u'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'e'
+call gc
+mov al,'r'
+call gc
+mov al,'m'
+call gc
+mov al,'i'
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'f'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,'m'
+call gc
+mov al,'a'
+call gc
+mov al,'r'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'a'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'v'
+call gc
+mov al,'i'
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,'o'
+call gc
+mov al,'.'
+call gc
+mov al,';'
+call gc
 
 	ret
-	;Termina la pregunta 8
-
-copiar_pregunta9:
-	;Comienza la pregunta 9
-	mov al, 'L'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'B'
-	call guardar_char
-	mov al, '0'
-	call guardar_char
-	mov al, ','
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'B'
-	call guardar_char
-	mov al, '1'
-	call guardar_char
-	mov al, ','
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'B'
-	call guardar_char
-	mov al, '2'
-	call guardar_char
-	mov al, ','
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'y'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'B'
-	call guardar_char
-	mov al, '3'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, '8'
-	call guardar_char
-	mov al, '0'
-	call guardar_char
-	mov al, '8'
-	call guardar_char
-	mov al, '6'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'q'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'b'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'b'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, '.'
-	call guardar_char
-	mov al, ';'
-	call guardar_char
+cp9:
+mov al,'L'
+call gc
+mov al,'o'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'B'
+call gc
+mov al,'0'
+call gc
+mov al,','
+call gc
+mov al,' '
+call gc
+mov al,'B'
+call gc
+mov al,'1'
+call gc
+mov al,','
+call gc
+mov al,' '
+call gc
+mov al,'B'
+call gc
+mov al,'2'
+call gc
+mov al,','
+call gc
+mov al,' '
+call gc
+mov al,'y'
+call gc
+mov al,' '
+call gc
+mov al,'B'
+call gc
+mov al,'3'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'m'
+call gc
+mov al,'i'
+call gc
+mov al,'c'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,'p'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,'c'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,'a'
+call gc
+mov al,'d'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,' '
+call gc
+mov al,'8'
+call gc
+mov al,'0'
+call gc
+mov al,'8'
+call gc
+mov al,'6'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,'r'
+call gc
+mov al,'m'
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'a'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'q'
+call gc
+mov al,'u'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,'d'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'m'
+call gc
+mov al,'e'
+call gc
+mov al,'m'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,'i'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,'c'
+call gc
+mov al,'r'
+call gc
+mov al,'i'
+call gc
+mov al,'b'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'a'
+call gc
+mov al,'t'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'o'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'a'
+call gc
+mov al,'t'
+call gc
+mov al,'o'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'u'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,'t'
+call gc
+mov al,'o'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'b'
+call gc
+mov al,'u'
+call gc
+mov al,'s'
+call gc
+mov al,'.'
+call gc
+mov al,';'
+call gc
 
 	ret
-	;Termina la pregunta 9
-
-copiar_pregunta10:
-	;Comienza la pregunta 10
-	mov al, 'I'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'R'
-	call guardar_char
-	mov al, 'E'
-	call guardar_char
-	mov al, 'S'
-	call guardar_char
-	mov al, 'E'
-	call guardar_char
-	mov al, 'T'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'g'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'v'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'y'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'z'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ','
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'b'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'g'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'j'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'g'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'q'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'F'
-	call guardar_char
-	mov al, '0'
-	call guardar_char
-	mov al, '0'
-	call guardar_char
-	mov al, '0'
-	call guardar_char
-	mov al, '0'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'I'
-	call guardar_char
-	mov al, 'N'
-	call guardar_char
-	mov al, 'T'
-	call guardar_char
-	mov al, 'E'
-	call guardar_char
-	mov al, 'L'
-	call guardar_char
-	mov al, '.'
-	call guardar_char
-	mov al, ';'
-	call guardar_char
+cp10:
+mov al,'I'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,'r'
+call gc
+mov al,'r'
+call gc
+mov al,'u'
+call gc
+mov al,'p'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'R'
+call gc
+mov al,'E'
+call gc
+mov al,'S'
+call gc
+mov al,'E'
+call gc
+mov al,'T'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'g'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'e'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,'d'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'t'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,'v'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'u'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'m'
+call gc
+mov al,'i'
+call gc
+mov al,'c'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,'p'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,'c'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,'a'
+call gc
+mov al,'d'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,' '
+call gc
+mov al,'y'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'e'
+call gc
+mov al,'r'
+call gc
+mov al,'m'
+call gc
+mov al,'i'
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'i'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'a'
+call gc
+mov al,'l'
+call gc
+mov al,'i'
+call gc
+mov al,'z'
+call gc
+mov al,'a'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'i'
+call gc
+mov al,'s'
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,'m'
+call gc
+mov al,'a'
+call gc
+mov al,','
+call gc
+mov al,' '
+call gc
+mov al,'o'
+call gc
+mov al,'b'
+call gc
+mov al,'l'
+call gc
+mov al,'i'
+call gc
+mov al,'g'
+call gc
+mov al,'a'
+call gc
+mov al,'n'
+call gc
+mov al,'d'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'a'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'m'
+call gc
+mov al,'i'
+call gc
+mov al,'c'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,'p'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,'c'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,'a'
+call gc
+mov al,'d'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,' '
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'j'
+call gc
+mov al,'e'
+call gc
+mov al,'c'
+call gc
+mov al,'u'
+call gc
+mov al,'t'
+call gc
+mov al,'a'
+call gc
+mov al,'r'
+call gc
+mov al,' '
+call gc
+mov al,'u'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,'g'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,'m'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'q'
+call gc
+mov al,'u'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'c'
+call gc
+mov al,'u'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'i'
+call gc
+mov al,'r'
+call gc
+mov al,'e'
+call gc
+mov al,'c'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'F'
+call gc
+mov al,'0'
+call gc
+mov al,'0'
+call gc
+mov al,'0'
+call gc
+mov al,'0'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'a'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'o'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'m'
+call gc
+mov al,'i'
+call gc
+mov al,'c'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,'p'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,'c'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,'a'
+call gc
+mov al,'d'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'I'
+call gc
+mov al,'N'
+call gc
+mov al,'T'
+call gc
+mov al,'E'
+call gc
+mov al,'L'
+call gc
+mov al,'.'
+call gc
+mov al,';'
+call gc
 
 	ret
-	;Termina la pregunta 10
-
-copiar_pregunta11:
-	;Comienza la pregunta 11
-	mov al, 'L'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'f'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, '0'
-	call guardar_char
-	mov al, '6'
-	call guardar_char
-	mov al, 'H'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, '1'
-	call guardar_char
-	mov al, '0'
-	call guardar_char
-	mov al, 'H'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'v'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'v'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'h'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'b'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'j'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ','
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'y'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'b'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'A'
-	call guardar_char
-	mov al, 'L'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'f'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'v'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, ','
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'B'
-	call guardar_char
-	mov al, 'H'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'b'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ','
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'C'
-	call guardar_char
-	mov al, 'X'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'f'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'y'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'D'
-	call guardar_char
-	mov al, 'X'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'f'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, '.'
-	call guardar_char
-	mov al, ';'
-	call guardar_char
+cp11:
+mov al,'L'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'f'
+call gc
+mov al,'u'
+call gc
+mov al,'n'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'0'
+call gc
+mov al,'6'
+call gc
+mov al,'H'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,' '
+call gc
+mov al,'1'
+call gc
+mov al,'0'
+call gc
+mov al,'H'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'e'
+call gc
+mov al,'r'
+call gc
+mov al,'m'
+call gc
+mov al,'i'
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'m'
+call gc
+mov al,'o'
+call gc
+mov al,'v'
+call gc
+mov al,'e'
+call gc
+mov al,'r'
+call gc
+mov al,' '
+call gc
+mov al,'u'
+call gc
+mov al,'n'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'v'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'a'
+call gc
+mov al,'n'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'a'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'a'
+call gc
+mov al,'l'
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'h'
+call gc
+mov al,'a'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'a'
+call gc
+mov al,'b'
+call gc
+mov al,'a'
+call gc
+mov al,'j'
+call gc
+mov al,'o'
+call gc
+mov al,','
+call gc
+mov al,' '
+call gc
+mov al,'y'
+call gc
+mov al,' '
+call gc
+mov al,'a'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,'b'
+call gc
+mov al,'e'
+call gc
+mov al,'m'
+call gc
+mov al,'o'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'l'
+call gc
+mov al,'o'
+call gc
+mov al,'c'
+call gc
+mov al,'a'
+call gc
+mov al,'r'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'A'
+call gc
+mov al,'L'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'n'
+call gc
+mov al,'u'
+call gc
+mov al,'m'
+call gc
+mov al,'e'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'f'
+call gc
+mov al,'i'
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'m'
+call gc
+mov al,'o'
+call gc
+mov al,'v'
+call gc
+mov al,'e'
+call gc
+mov al,'r'
+call gc
+mov al,','
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'B'
+call gc
+mov al,'H'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'a'
+call gc
+mov al,'t'
+call gc
+mov al,'r'
+call gc
+mov al,'i'
+call gc
+mov al,'b'
+call gc
+mov al,'u'
+call gc
+mov al,'t'
+call gc
+mov al,'o'
+call gc
+mov al,','
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'C'
+call gc
+mov al,'X'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'a'
+call gc
+mov al,'d'
+call gc
+mov al,'a'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'o'
+call gc
+mov al,'s'
+call gc
+mov al,'i'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'f'
+call gc
+mov al,'i'
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'i'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'y'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'D'
+call gc
+mov al,'X'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'a'
+call gc
+mov al,'d'
+call gc
+mov al,'a'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'o'
+call gc
+mov al,'s'
+call gc
+mov al,'i'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'u'
+call gc
+mov al,'l'
+call gc
+mov al,'t'
+call gc
+mov al,'i'
+call gc
+mov al,'m'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'f'
+call gc
+mov al,'i'
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,'.'
+call gc
+mov al,';'
+call gc
 
 	ret
-	;Termina la pregunta 11
-
-copiar_pregunta12:
-	;Comienza la pregunta 12
-	mov al, 'L'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'v'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'x'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'R'
-	call guardar_char
-	mov al, 'A'
-	call guardar_char
-	mov al, 'M'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'y'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'f'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'q'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ','
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'A'
-	call guardar_char
-	mov al, 'S'
-	call guardar_char
-	mov al, 'C'
-	call guardar_char
-	mov al, 'I'
-	call guardar_char
-	mov al, 'I'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'y'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'b'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, '.'
-	call guardar_char
-	mov al, ';'
-	call guardar_char
+cp12:
+mov al,'L'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'m'
+call gc
+mov al,'e'
+call gc
+mov al,'m'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,'i'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'v'
+call gc
+mov al,'i'
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'m'
+call gc
+mov al,'o'
+call gc
+mov al,'d'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,'x'
+call gc
+mov al,'t'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'u'
+call gc
+mov al,'n'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'m'
+call gc
+mov al,'e'
+call gc
+mov al,'m'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,'i'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'t'
+call gc
+mov al,'i'
+call gc
+mov al,'p'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'R'
+call gc
+mov al,'A'
+call gc
+mov al,'M'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,'t'
+call gc
+mov al,'a'
+call gc
+mov al,'t'
+call gc
+mov al,'i'
+call gc
+mov al,'c'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'y'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'a'
+call gc
+mov al,'l'
+call gc
+mov al,'m'
+call gc
+mov al,'a'
+call gc
+mov al,'c'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'t'
+call gc
+mov al,'o'
+call gc
+mov al,'d'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'f'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,'m'
+call gc
+mov al,'a'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'o'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'a'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,'c'
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,'r'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'q'
+call gc
+mov al,'u'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'m'
+call gc
+mov al,'u'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,'t'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'a'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'a'
+call gc
+mov al,'l'
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,','
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'e'
+call gc
+mov al,'d'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'u'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'a'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,'c'
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,'r'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'A'
+call gc
+mov al,'S'
+call gc
+mov al,'C'
+call gc
+mov al,'I'
+call gc
+mov al,'I'
+call gc
+mov al,' '
+call gc
+mov al,'y'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'u'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'a'
+call gc
+mov al,'t'
+call gc
+mov al,'r'
+call gc
+mov al,'i'
+call gc
+mov al,'b'
+call gc
+mov al,'u'
+call gc
+mov al,'t'
+call gc
+mov al,'o'
+call gc
+mov al,'s'
+call gc
+mov al,'.'
+call gc
+mov al,';'
+call gc
 
 	ret
-	;Termina la pregunta 12
-
-copiar_pregunta13:
-	;Comienza la pregunta 13
-	mov al, 'L'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'h'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'y'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'q'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'z'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'y'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'R'
-	call guardar_char
-	mov al, 'A'
-	call guardar_char
-	mov al, 'M'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, '.'
-	call guardar_char
-	mov al, ';'
-	call guardar_char
+cp13:
+mov al,'L'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'m'
+call gc
+mov al,'e'
+call gc
+mov al,'m'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,'i'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'a'
+call gc
+mov al,'c'
+call gc
+mov al,'h'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'u'
+call gc
+mov al,'n'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'m'
+call gc
+mov al,'e'
+call gc
+mov al,'m'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,'i'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'m'
+call gc
+mov al,'u'
+call gc
+mov al,'y'
+call gc
+mov al,' '
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,'p'
+call gc
+mov al,'i'
+call gc
+mov al,'d'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'q'
+call gc
+mov al,'u'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'u'
+call gc
+mov al,'t'
+call gc
+mov al,'i'
+call gc
+mov al,'l'
+call gc
+mov al,'i'
+call gc
+mov al,'z'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'m'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'u'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'r'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'m'
+call gc
+mov al,'i'
+call gc
+mov al,'c'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,'p'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,'c'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,'a'
+call gc
+mov al,'d'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,' '
+call gc
+mov al,'y'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'m'
+call gc
+mov al,'e'
+call gc
+mov al,'m'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,'i'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'R'
+call gc
+mov al,'A'
+call gc
+mov al,'M'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'r'
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'p'
+call gc
+mov al,'a'
+call gc
+mov al,'l'
+call gc
+mov al,'.'
+call gc
+mov al,';'
+call gc
 
 	ret
-	;Termina la pregunta 13
-
-copiar_pregunta14:
-	;Comienza la pregunta 14
-	mov al, 'E'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, '8'
-	call guardar_char
-	mov al, '0'
-	call guardar_char
-	mov al, '8'
-	call guardar_char
-	mov al, '6'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'b'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, '('
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ')'
-	call guardar_char
-	mov al, ','
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'q'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'q'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'E'
-	call guardar_char
-	mov al, 'U'
-	call guardar_char
-	mov al, ','
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'g'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ','
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'g'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'y'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, '.'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'D'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'B'
-	call guardar_char
-	mov al, 'I'
-	call guardar_char
-	mov al, 'U'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'g'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'g'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'y'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'j'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ','
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'v'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'f'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, '.'
-	call guardar_char
-	mov al, ';'
-	call guardar_char
+cp14:
+mov al,'E'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'u'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'8'
+call gc
+mov al,'0'
+call gc
+mov al,'8'
+call gc
+mov al,'6'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'u'
+call gc
+mov al,'s'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'u'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'m'
+call gc
+mov al,'e'
+call gc
+mov al,'t'
+call gc
+mov al,'o'
+call gc
+mov al,'d'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,'m'
+call gc
+mov al,'a'
+call gc
+mov al,'d'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,'t'
+call gc
+mov al,'r'
+call gc
+mov al,'u'
+call gc
+mov al,'c'
+call gc
+mov al,'t'
+call gc
+mov al,'u'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'t'
+call gc
+mov al,'u'
+call gc
+mov al,'b'
+call gc
+mov al,'u'
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,'r'
+call gc
+mov al,' '
+call gc
+mov al,'('
+call gc
+mov al,'p'
+call gc
+mov al,'i'
+call gc
+mov al,'p'
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'e'
+call gc
+mov al,')'
+call gc
+mov al,','
+call gc
+mov al,' '
+call gc
+mov al,'q'
+call gc
+mov al,'u'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,'s'
+call gc
+mov al,'i'
+call gc
+mov al,'s'
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'q'
+call gc
+mov al,'u'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'E'
+call gc
+mov al,'U'
+call gc
+mov al,','
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'i'
+call gc
+mov al,'r'
+call gc
+mov al,'e'
+call gc
+mov al,'c'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'u'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'d'
+call gc
+mov al,'i'
+call gc
+mov al,'g'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'s'
+call gc
+mov al,'t'
+call gc
+mov al,'r'
+call gc
+mov al,'u'
+call gc
+mov al,'c'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,','
+call gc
+mov al,' '
+call gc
+mov al,'t'
+call gc
+mov al,'o'
+call gc
+mov al,'d'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,'t'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'a'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'a'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'i'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'p'
+call gc
+mov al,'a'
+call gc
+mov al,'r'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'o'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'d'
+call gc
+mov al,'i'
+call gc
+mov al,'g'
+call gc
+mov al,'o'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'s'
+call gc
+mov al,'t'
+call gc
+mov al,'r'
+call gc
+mov al,'u'
+call gc
+mov al,'c'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'y'
+call gc
+mov al,' '
+call gc
+mov al,'a'
+call gc
+mov al,'s'
+call gc
+mov al,'i'
+call gc
+mov al,' '
+call gc
+mov al,'m'
+call gc
+mov al,'a'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'i'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'l'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,'.'
+call gc
+mov al,' '
+call gc
+mov al,'D'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,'p'
+call gc
+mov al,'u'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'B'
+call gc
+mov al,'I'
+call gc
+mov al,'U'
+call gc
+mov al,' '
+call gc
+mov al,'t'
+call gc
+mov al,'o'
+call gc
+mov al,'m'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'o'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'d'
+call gc
+mov al,'i'
+call gc
+mov al,'g'
+call gc
+mov al,'o'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'s'
+call gc
+mov al,'t'
+call gc
+mov al,'r'
+call gc
+mov al,'u'
+call gc
+mov al,'c'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,'g'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,'m'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'y'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'o'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'j'
+call gc
+mov al,'e'
+call gc
+mov al,'c'
+call gc
+mov al,'u'
+call gc
+mov al,'t'
+call gc
+mov al,'a'
+call gc
+mov al,','
+call gc
+mov al,' '
+call gc
+mov al,'v'
+call gc
+mov al,'a'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'a'
+call gc
+mov al,'n'
+call gc
+mov al,'d'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,'t'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'f'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,'m'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,'.'
+call gc
+mov al,';'
+call gc
 
 	ret
-	;Termina la pregunta 14
-
-copiar_pregunta15:
-	;Comienza la pregunta 15
-	mov al, 'E'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'g'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'g'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'k'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'S'
-	call guardar_char
-	mov al, 'S'
-	call guardar_char
-	mov al, ','
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'g'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'k'
-	call guardar_char
-	mov al, ','
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'b'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'j'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'j'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'g'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'S'
-	call guardar_char
-	mov al, 'P'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'z'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'g'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'g'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'x'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, '.'
-	call guardar_char
-	mov al, ';'
-	call guardar_char
+cp15:
+mov al,'E'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'r'
+call gc
+mov al,'e'
+call gc
+mov al,'g'
+call gc
+mov al,'i'
+call gc
+mov al,'s'
+call gc
+mov al,'t'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'e'
+call gc
+mov al,'g'
+call gc
+mov al,'m'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'t'
+call gc
+mov al,'a'
+call gc
+mov al,'c'
+call gc
+mov al,'k'
+call gc
+mov al,' '
+call gc
+mov al,'S'
+call gc
+mov al,'S'
+call gc
+mov al,','
+call gc
+mov al,' '
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'d'
+call gc
+mov al,'i'
+call gc
+mov al,'c'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'o'
+call gc
+mov al,'s'
+call gc
+mov al,'i'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'c'
+call gc
+mov al,'u'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'e'
+call gc
+mov al,'g'
+call gc
+mov al,'m'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'t'
+call gc
+mov al,'a'
+call gc
+mov al,'c'
+call gc
+mov al,'k'
+call gc
+mov al,','
+call gc
+mov al,' '
+call gc
+mov al,'t'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,'b'
+call gc
+mov al,'a'
+call gc
+mov al,'j'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,'j'
+call gc
+mov al,'u'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'r'
+call gc
+mov al,'e'
+call gc
+mov al,'g'
+call gc
+mov al,'i'
+call gc
+mov al,'s'
+call gc
+mov al,'t'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'S'
+call gc
+mov al,'P'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'u'
+call gc
+mov al,'a'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,'r'
+call gc
+mov al,'m'
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,'p'
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,'z'
+call gc
+mov al,'a'
+call gc
+mov al,'m'
+call gc
+mov al,'i'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'e'
+call gc
+mov al,'g'
+call gc
+mov al,'m'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'a'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'d'
+call gc
+mov al,'i'
+call gc
+mov al,'c'
+call gc
+mov al,'a'
+call gc
+mov al,'r'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'u'
+call gc
+mov al,'g'
+call gc
+mov al,'a'
+call gc
+mov al,'r'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'x'
+call gc
+mov al,'a'
+call gc
+mov al,'c'
+call gc
+mov al,'t'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,'t'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'i'
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,'.'
+call gc
+mov al,';'
+call gc
 
 	ret
-	;Termina la pregunta 15
-
-copiar_pregunta16:
-	;Comienza la pregunta 16
-	mov al, 'E'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'b'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'q'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'v'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'q'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'j'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ','
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'j'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, '/'
-	call guardar_char
-	mov al, 'w'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'q'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, '.'
-	call guardar_char
-	mov al, ';'
-	call guardar_char
+cp16:
+mov al,'E'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'b'
+call gc
+mov al,'u'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'e'
+call gc
+mov al,'r'
+call gc
+mov al,'m'
+call gc
+mov al,'i'
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'q'
+call gc
+mov al,'u'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'m'
+call gc
+mov al,'i'
+call gc
+mov al,'c'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,'p'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,'c'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,'a'
+call gc
+mov al,'d'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'u'
+call gc
+mov al,'e'
+call gc
+mov al,'d'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'v'
+call gc
+mov al,'i'
+call gc
+mov al,'a'
+call gc
+mov al,'r'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'a'
+call gc
+mov al,'l'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'n'
+call gc
+mov al,'e'
+call gc
+mov al,'c'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,'a'
+call gc
+mov al,'r'
+call gc
+mov al,'i'
+call gc
+mov al,'a'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'a'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'q'
+call gc
+mov al,'u'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'r'
+call gc
+mov al,'e'
+call gc
+mov al,'a'
+call gc
+mov al,'l'
+call gc
+mov al,'i'
+call gc
+mov al,'c'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'j'
+call gc
+mov al,'e'
+call gc
+mov al,'c'
+call gc
+mov al,'u'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'s'
+call gc
+mov al,'t'
+call gc
+mov al,'r'
+call gc
+mov al,'u'
+call gc
+mov al,'c'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,','
+call gc
+mov al,' '
+call gc
+mov al,'u'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'j'
+call gc
+mov al,'e'
+call gc
+mov al,'m'
+call gc
+mov al,'p'
+call gc
+mov al,'l'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'e'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'r'
+call gc
+mov al,'e'
+call gc
+mov al,'a'
+call gc
+mov al,'d'
+call gc
+mov al,'/'
+call gc
+mov al,'w'
+call gc
+mov al,'r'
+call gc
+mov al,'i'
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'q'
+call gc
+mov al,'u'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'d'
+call gc
+mov al,'i'
+call gc
+mov al,'c'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'u'
+call gc
+mov al,'n'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'e'
+call gc
+mov al,'c'
+call gc
+mov al,'t'
+call gc
+mov al,'u'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,'c'
+call gc
+mov al,'r'
+call gc
+mov al,'i'
+call gc
+mov al,'t'
+call gc
+mov al,'u'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'m'
+call gc
+mov al,'e'
+call gc
+mov al,'m'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,'i'
+call gc
+mov al,'a'
+call gc
+mov al,'.'
+call gc
+mov al,';'
+call gc
 
 	ret
-	;Termina la pregunta 16
-
-copiar_pregunta17:
-	;Comienza la pregunta 17
-	mov al, 'E'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, '8'
-	call guardar_char
-	mov al, '0'
-	call guardar_char
-	mov al, '8'
-	call guardar_char
-	mov al, '5'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'g'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'g'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, '1'
-	call guardar_char
-	mov al, '6'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'b'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'q'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'q'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'j'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, '.'
-	call guardar_char
-	mov al, ';'
-	call guardar_char
+cp17:
+mov al,'E'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'m'
+call gc
+mov al,'i'
+call gc
+mov al,'c'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,'p'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,'c'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,'a'
+call gc
+mov al,'d'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,' '
+call gc
+mov al,'8'
+call gc
+mov al,'0'
+call gc
+mov al,'8'
+call gc
+mov al,'5'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'a'
+call gc
+mov al,'d'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,'g'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,'m'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'u'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'r'
+call gc
+mov al,'e'
+call gc
+mov al,'g'
+call gc
+mov al,'i'
+call gc
+mov al,'s'
+call gc
+mov al,'t'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,'r'
+call gc
+mov al,'n'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'1'
+call gc
+mov al,'6'
+call gc
+mov al,' '
+call gc
+mov al,'b'
+call gc
+mov al,'i'
+call gc
+mov al,'t'
+call gc
+mov al,' '
+call gc
+mov al,'q'
+call gc
+mov al,'u'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'i'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'i'
+call gc
+mov al,'r'
+call gc
+mov al,'e'
+call gc
+mov al,'c'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'s'
+call gc
+mov al,'t'
+call gc
+mov al,'r'
+call gc
+mov al,'u'
+call gc
+mov al,'c'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'q'
+call gc
+mov al,'u'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'e'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'j'
+call gc
+mov al,'e'
+call gc
+mov al,'c'
+call gc
+mov al,'u'
+call gc
+mov al,'t'
+call gc
+mov al,'a'
+call gc
+mov al,'d'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'m'
+call gc
+mov al,'i'
+call gc
+mov al,'c'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,'p'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,'c'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,'a'
+call gc
+mov al,'d'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,'.'
+call gc
+mov al,';'
+call gc
 
 	ret
-	;Termina la pregunta 17
-
-copiar_pregunta18:
-	;Comienza la pregunta 18
-	mov al, 'E'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'E'
-	call guardar_char
-	mov al, 'N'
-	call guardar_char
-	mov al, 'I'
-	call guardar_char
-	mov al, 'A'
-	call guardar_char
-	mov al, 'C'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'v'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'w'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'y'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'g'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ','
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'g'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'y'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'q'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'b'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, '.'
-	call guardar_char
-	mov al, ';'
-	call guardar_char
+cp18:
+mov al,'E'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'m'
+call gc
+mov al,'p'
+call gc
+mov al,'u'
+call gc
+mov al,'t'
+call gc
+mov al,'a'
+call gc
+mov al,'d'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'E'
+call gc
+mov al,'N'
+call gc
+mov al,'I'
+call gc
+mov al,'A'
+call gc
+mov al,'C'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'i'
+call gc
+mov al,'s'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'a'
+call gc
+mov al,'d'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,' '
+call gc
+mov al,'v'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'n'
+call gc
+mov al,'e'
+call gc
+mov al,'w'
+call gc
+mov al,'m'
+call gc
+mov al,'a'
+call gc
+mov al,'n'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'y'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'u'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'l'
+call gc
+mov al,'e'
+call gc
+mov al,'g'
+call gc
+mov al,'a'
+call gc
+mov al,'s'
+call gc
+mov al,','
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'u'
+call gc
+mov al,'s'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'r'
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'p'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,'g'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,'m'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'a'
+call gc
+mov al,'l'
+call gc
+mov al,'m'
+call gc
+mov al,'a'
+call gc
+mov al,'c'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'a'
+call gc
+mov al,'d'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'m'
+call gc
+mov al,'e'
+call gc
+mov al,'m'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,'i'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'y'
+call gc
+mov al,' '
+call gc
+mov al,'p'
+call gc
+mov al,'o'
+call gc
+mov al,'s'
+call gc
+mov al,'e'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'u'
+call gc
+mov al,'n'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'a'
+call gc
+mov al,'r'
+call gc
+mov al,'q'
+call gc
+mov al,'u'
+call gc
+mov al,'i'
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,'c'
+call gc
+mov al,'t'
+call gc
+mov al,'u'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'u'
+call gc
+mov al,'a'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'b'
+call gc
+mov al,'a'
+call gc
+mov al,'s'
+call gc
+mov al,'a'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'o'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'m'
+call gc
+mov al,'p'
+call gc
+mov al,'u'
+call gc
+mov al,'t'
+call gc
+mov al,'a'
+call gc
+mov al,'d'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'m'
+call gc
+mov al,'o'
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,'r'
+call gc
+mov al,'n'
+call gc
+mov al,'o'
+call gc
+mov al,'s'
+call gc
+mov al,'.'
+call gc
+mov al,';'
+call gc
 
 	ret
-	;Termina la pregunta 18
-
-copiar_pregunta19:
-	;Comienza la pregunta 19
-	mov al, 'E'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'b'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ','
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'g'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'y'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'g'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'S'
-	call guardar_char
-	mov al, 'I'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'D'
-	call guardar_char
-	mov al, 'I'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'g'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'b'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'B'
-	call guardar_char
-	mov al, 'X'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'B'
-	call guardar_char
-	mov al, 'P'
-	call guardar_char
-	mov al, '.'
-	call guardar_char
-	mov al, ';'
-	call guardar_char
+cp19:
+mov al,'E'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'m'
+call gc
+mov al,'o'
+call gc
+mov al,'d'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'i'
+call gc
+mov al,'r'
+call gc
+mov al,'e'
+call gc
+mov al,'c'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,'a'
+call gc
+mov al,'m'
+call gc
+mov al,'i'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'b'
+call gc
+mov al,'a'
+call gc
+mov al,'s'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'m'
+call gc
+mov al,'a'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'d'
+call gc
+mov al,'i'
+call gc
+mov al,'c'
+call gc
+mov al,'e'
+call gc
+mov al,','
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'a'
+call gc
+mov al,'t'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,'t'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'u'
+call gc
+mov al,'n'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'l'
+call gc
+mov al,'o'
+call gc
+mov al,'c'
+call gc
+mov al,'a'
+call gc
+mov al,'l'
+call gc
+mov al,'i'
+call gc
+mov al,'d'
+call gc
+mov al,'a'
+call gc
+mov al,'d'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'m'
+call gc
+mov al,'e'
+call gc
+mov al,'m'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,'i'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'e'
+call gc
+mov al,'g'
+call gc
+mov al,'m'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'a'
+call gc
+mov al,'t'
+call gc
+mov al,'o'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'u'
+call gc
+mov al,'y'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'i'
+call gc
+mov al,'r'
+call gc
+mov al,'e'
+call gc
+mov al,'c'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'c'
+call gc
+mov al,'u'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'a'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'u'
+call gc
+mov al,'m'
+call gc
+mov al,'a'
+call gc
+mov al,'r'
+call gc
+mov al,' '
+call gc
+mov al,'e'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,'t'
+call gc
+mov al,'e'
+call gc
+mov al,'n'
+call gc
+mov al,'i'
+call gc
+mov al,'d'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'o'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'r'
+call gc
+mov al,'e'
+call gc
+mov al,'g'
+call gc
+mov al,'i'
+call gc
+mov al,'s'
+call gc
+mov al,'t'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'d'
+call gc
+mov al,'i'
+call gc
+mov al,'c'
+call gc
+mov al,'e'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'S'
+call gc
+mov al,'I'
+call gc
+mov al,' '
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'D'
+call gc
+mov al,'I'
+call gc
+mov al,' '
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'o'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'r'
+call gc
+mov al,'e'
+call gc
+mov al,'g'
+call gc
+mov al,'i'
+call gc
+mov al,'s'
+call gc
+mov al,'t'
+call gc
+mov al,'r'
+call gc
+mov al,'o'
+call gc
+mov al,'s'
+call gc
+mov al,' '
+call gc
+mov al,'b'
+call gc
+mov al,'a'
+call gc
+mov al,'s'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'B'
+call gc
+mov al,'X'
+call gc
+mov al,' '
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'B'
+call gc
+mov al,'P'
+call gc
+mov al,'.'
+call gc
+mov al,';'
+call gc
 
 	ret
-	;Termina la pregunta 19
+cp20:
+mov al,'L'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'s'
+call gc
+mov al,'t'
+call gc
+mov al,'r'
+call gc
+mov al,'u'
+call gc
+mov al,'c'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'a'
+call gc
+mov al,'l'
+call gc
+mov al,'t'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,'d'
+call gc
+mov al,'i'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,'a'
+call gc
+mov al,'l'
+call gc
+mov al,' '
+call gc
+mov al,'J'
+call gc
+mov al,'A'
+call gc
+mov al,'E'
+call gc
+mov al,','
+call gc
+mov al,' '
+call gc
+mov al,'d'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'u'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'a'
+call gc
+mov al,'l'
+call gc
+mov al,'t'
+call gc
+mov al,'o'
+call gc
+mov al,' '
+call gc
+mov al,'h'
+call gc
+mov al,'a'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'u'
+call gc
+mov al,'n'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'i'
+call gc
+mov al,'n'
+call gc
+mov al,'s'
+call gc
+mov al,'t'
+call gc
+mov al,'r'
+call gc
+mov al,'u'
+call gc
+mov al,'c'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'i'
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'u'
+call gc
+mov al,'m'
+call gc
+mov al,'p'
+call gc
+mov al,'l'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'q'
+call gc
+mov al,'u'
+call gc
+mov al,'e'
+call gc
+mov al,' '
+call gc
+mov al,'u'
+call gc
+mov al,'n'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,'d'
+call gc
+mov al,'i'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'Y'
+call gc
+mov al,','
+call gc
+mov al,' '
+call gc
+mov al,'s'
+call gc
+mov al,'e'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'m'
+call gc
+mov al,'a'
+call gc
+mov al,'y'
+call gc
+mov al,'o'
+call gc
+mov al,'r'
+call gc
+mov al,' '
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'o'
+call gc
+mov al,'t'
+call gc
+mov al,'r'
+call gc
+mov al,'a'
+call gc
+mov al,' '
+call gc
+mov al,'c'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,'d'
+call gc
+mov al,'i'
+call gc
+mov al,'c'
+call gc
+mov al,'i'
+call gc
+mov al,'o'
+call gc
+mov al,'n'
+call gc
+mov al,' '
+call gc
+mov al,'X'
+call gc
+mov al,' '
+call gc
+mov al,' '
+call gc
+mov al,'"'
+call gc
+mov al,'Y'
+call gc
+mov al,' '
+call gc
+mov al,'>'
+call gc
+mov al,' '
+call gc
+mov al,'X'
+call gc
+mov al,'"'
+call gc
+mov al,'.'
+call gc
+mov al,' '
+call gc
+mov al,';'
+call gc
 
-copiar_pregunta20:
-	;Comienza la pregunta 20
-	mov al, 'L'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'J'
-	call guardar_char
-	mov al, 'A'
-	call guardar_char
-	mov al, 'E'
-	call guardar_char
-	mov al, ','
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'h'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'p'
-	call guardar_char
-	mov al, 'l'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'q'
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'u'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'Y'
-	call guardar_char
-	mov al, ','
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 's'
-	call guardar_char
-	mov al, 'e'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'm'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, 'y'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 't'
-	call guardar_char
-	mov al, 'r'
-	call guardar_char
-	mov al, 'a'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, 'd'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'c'
-	call guardar_char
-	mov al, 'i'
-	call guardar_char
-	mov al, 'o'
-	call guardar_char
-	mov al, 'n'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'X'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, '"'
-	call guardar_char
-	mov al, 'Y'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, '>'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, 'X'
-	call guardar_char
-	mov al, '"'
-	call guardar_char
-	mov al, '.'
-	call guardar_char
-	mov al, ' '
-	call guardar_char
-	mov al, ';'
-	call guardar_char
+ret
 
-	ret
-	;Termina la pregunta 20
 Code Ends
 End Start
