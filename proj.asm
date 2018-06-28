@@ -53,17 +53,56 @@ init_mem_preguntas:
 	; 00h: incorrecto
 	; 01h: correcto
 	; 02h: sin contestar
-	llenar_contestadas:
+	llenar_respuesta:
 		mov ds:[0300h + si], al
 		inc si
 		cmp si, 0025d
-		jnz llenar_contestadas
+		jnz llenar_respuesta
+
+	mov si, 0000h
+
+	; para la visualizacion de la opcion
+	llenar_opcion_escogida:
+		mov ds:[0350h + si], al
+		inc si
+		cmp si, 0025d
+		jnz llenar_opcion_escogida
+
 
 	ret
 
 ;--------------------------------------------------------
 ; PREGUNTA 1
 ;--------------------------------------------------------
+
+btn_opt:
+	; leer opcion escogida de la memoria
+	mov al, ds:[0350h + si]
+
+	;01h: codigo de boton verdadero
+	cmp al, 01h
+	je dibujar_btn_verdadero
+
+	;00h: codigo de boton falso
+	cmp al, 00h
+	je dibujar_btn_falso
+
+	;si no es ninguno, esta sin contestar
+	jne dibujar_btn_sin_contestar
+
+dibujar_btn_verdadero:
+	call btn_falso
+	call btn_verdadero_act
+	jmp salir_btn_opt
+dibujar_btn_falso:
+	call btn_falso_act
+	call btn_verdadero
+	jmp salir_btn_opt
+dibujar_btn_sin_contestar:
+	call btn_falso
+	call btn_verdadero
+salir_btn_opt:
+	ret
 
 pregunta_1:
 	; Pregunta actual: 01h
@@ -72,16 +111,23 @@ pregunta_1:
 	mov ds:[0220h], al
 	call init_grafico
 	call limpiar_reg
+	; copiar pregunta 1 a la memoria
 	call cp1
 	call init_pregunta
 	call texto_pregunta
 	call barra_progreso
+
+	; botones activos para la pregunta actual
 	call btn_siguiente
-	call init_interface
 
 mov si, 0000h
+	call btn_opt
+
 p1_manejar_clic:
+	; esperar un clic izquierdo
 	call manejar_clic
+
+	; dejar que el controlador identifique el boton
 	call buscar_btn
 
 	; 0275h: codigo de boton  presionado
@@ -89,22 +135,39 @@ p1_manejar_clic:
 	; 10h: boton de falso
 	cmp al,10h
 	je p1_btn_falso
+
 	; 11h: boton de verdadero
 	cmp al,11h
 	je p1_btn_verdadero
+
+	; 13h: boton de siguiente
 	cmp al,13h
 	je pregunta_2
+
+	; volver a esperar clic
 	jmp p1_manejar_clic
 
 p1_btn_verdadero:
+	; Evaluar la respuesta
 	mov al,01h
-	mov ds:[0300h+si],al
-	jmp pregunta_2
+	mov ds:[0300h+si], al
+
+	; Escoger la respuesta
+	; restaltar botones
+	mov al,01h
+	mov ds:[0350h+si], al
+	call btn_opt
+
+	; volver a esperar clic
+	jmp p1_manejar_clic
+
 p1_btn_falso:
 	mov al,00h
-	mov ds:[0300h+si],al
-	jmp pregunta_2
-	jmp fin_programa
+	mov ds:[0300h+si], al
+	mov al,00h
+	mov ds:[0350h+si], al
+	call btn_opt
+	jmp p1_manejar_clic
 
 
 ;--------------------------------------------------------
@@ -125,9 +188,9 @@ pregunta_2:
 	call barra_progreso
 	call btn_anterior
 	call btn_siguiente
-	call init_interface
 
 mov si, 0001h
+	call btn_opt
 p2_manejar_clic:
 
 	call manejar_clic
@@ -147,12 +210,17 @@ p2_manejar_clic:
 p2_btn_verdadero:
 	mov al,01h
 	mov ds:[0300h+si], al
-	jmp pregunta_3
+	mov al, 01h
+	mov ds:[0350h+si], al
+	call btn_opt
+	jmp p2_manejar_clic
 p2_btn_falso:
 	mov al,00h
 	mov ds:[0300h+si], al
-	jmp pregunta_3
-
+	mov al, 00h
+	mov ds:[0350h+si], al
+	call btn_opt
+	jmp p2_manejar_clic
 ;--------------------------------------------------------
 ; PREGUNTA 3
 ;--------------------------------------------------------
@@ -170,9 +238,9 @@ pregunta_3:
 	call barra_progreso
 	call btn_anterior
 	call btn_siguiente
-	call init_interface
 
 mov si, 0002h
+	call btn_opt
 p3_manejar_clic:
 
 	call manejar_clic
@@ -192,11 +260,17 @@ p3_manejar_clic:
 p3_btn_verdadero:
 	mov al,01h
 	mov ds:[0300h+si], al
-	jmp pregunta_4
+	mov al, 01h
+	mov ds:[0350h+si], al
+	call btn_opt
+	jmp p3_manejar_clic
 p3_btn_falso:
 	mov al,00h
 	mov ds:[0300h+si], al
-	jmp pregunta_4
+	mov al, 00h
+	mov ds:[0350h+si], al
+	call btn_opt
+	jmp p3_manejar_clic
 
 ;--------------------------------------------------------
 ; PREGUNTA 4
@@ -215,9 +289,9 @@ pregunta_4:
 	call barra_progreso
 	call btn_anterior
 	call btn_siguiente
-	call init_interface
 
 mov si, 0003h
+	call btn_opt
 p4_manejar_clic:
 
 	call manejar_clic
@@ -237,11 +311,17 @@ p4_manejar_clic:
 p4_btn_verdadero:
 	mov al,00h
 	mov ds:[0300h+si], al
-	jmp pregunta_5
+	mov al, 01h
+	mov ds:[0350h+si], al
+	call btn_opt
+	jmp p4_manejar_clic
 p4_btn_falso:
 	mov al,01h
 	mov ds:[0300h+si], al
-	jmp pregunta_5
+	mov al, 00h
+	mov ds:[0350h+si], al
+	call btn_opt
+	jmp p4_manejar_clic
 
 ;--------------------------------------------------------
 ; PREGUNTA 5
@@ -260,9 +340,9 @@ pregunta_5:
 	call barra_progreso
 	call btn_anterior
 	call btn_siguiente
-	call init_interface
 
 mov si, 0004h
+	call btn_opt
 p5_manejar_clic:
 
 	call manejar_clic
@@ -282,11 +362,17 @@ p5_manejar_clic:
 p5_btn_verdadero:
 	mov al,00h
 	mov ds:[0300h+si], al
-	jmp pregunta_6
+	mov al, 01h
+	mov ds:[0350h+si], al
+	call btn_opt
+	jmp p5_manejar_clic
 p5_btn_falso:
 	mov al,01h
 	mov ds:[0300h+si], al
-	jmp pregunta_6
+	mov al, 00h
+	mov ds:[0350h+si], al
+	call btn_opt
+	jmp p5_manejar_clic
 
 ;--------------------------------------------------------
 ; PREGUNTA 6
@@ -305,9 +391,9 @@ pregunta_6:
 	call barra_progreso
 	call btn_anterior
 	call btn_siguiente
-	call init_interface
 
 mov si, 0005h
+	call btn_opt
 p6_manejar_clic:
 
 	call manejar_clic
@@ -327,11 +413,17 @@ p6_manejar_clic:
 p6_btn_verdadero:
 	mov al,00h
 	mov ds:[0300h+si], al
-	jmp pregunta_7
+	mov al, 01h
+	mov ds:[0350h+si], al
+	call btn_opt
+	jmp p6_manejar_clic
 p6_btn_falso:
 	mov al,01h
 	mov ds:[0300h+si], al
-	jmp pregunta_7
+	mov al, 00h
+	mov ds:[0350h+si], al
+	call btn_opt
+	jmp p6_manejar_clic
 
 ;--------------------------------------------------------
 ; PREGUNTA 7
@@ -350,9 +442,9 @@ pregunta_7:
 	call barra_progreso
 	call btn_anterior
 	call btn_siguiente
-	call init_interface
 
 mov si, 0006h
+	call btn_opt
 p7_manejar_clic:
 
 	call manejar_clic
@@ -372,11 +464,17 @@ p7_manejar_clic:
 p7_btn_verdadero:
 	mov al,00h
 	mov ds:[0300h+si], al
-	jmp pregunta_8
+	mov al, 01h
+	mov ds:[0350h+si], al
+	call btn_opt
+	jmp p7_manejar_clic
 p7_btn_falso:
 	mov al,01h
 	mov ds:[0300h+si], al
-	jmp pregunta_8
+	mov al, 00h
+	mov ds:[0350h+si], al
+	call btn_opt
+	jmp p7_manejar_clic
 
 ;--------------------------------------------------------
 ; PREGUNTA 8
@@ -395,9 +493,9 @@ pregunta_8:
 	call barra_progreso
 	call btn_anterior
 	call btn_siguiente
-	call init_interface
 
 mov si, 0007h
+	call btn_opt
 p8_manejar_clic:
 
 	call manejar_clic
@@ -417,11 +515,17 @@ p8_manejar_clic:
 p8_btn_verdadero:
 	mov al,00h
 	mov ds:[0300h+si], al
-	jmp pregunta_9
+	mov al, 01h
+	mov ds:[0350h+si], al
+	call btn_opt
+	jmp p8_manejar_clic
 p8_btn_falso:
 	mov al,01h
 	mov ds:[0300h+si], al
-	jmp pregunta_9
+	mov al, 00h
+	mov ds:[0350h+si], al
+	call btn_opt
+	jmp p8_manejar_clic
 
 
 ;--------------------------------------------------------
@@ -441,9 +545,9 @@ pregunta_9:
 	call barra_progreso
 	call btn_anterior
 	call btn_siguiente
-	call init_interface
 
 mov si, 0008h
+	call btn_opt
 p9_manejar_clic:
 
 	call manejar_clic
@@ -463,11 +567,17 @@ p9_manejar_clic:
 p9_btn_verdadero:
 	mov al,00h
 	mov ds:[0300h+si], al
-	jmp pregunta_10
+	mov al, 01h
+	mov ds:[0350h+si], al
+	call btn_opt
+	jmp p9_manejar_clic
 p9_btn_falso:
 	mov al,01h
 	mov ds:[0300h+si], al
-	jmp pregunta_10
+	mov al, 00h
+	mov ds:[0350h+si], al
+	call btn_opt
+	jmp p9_manejar_clic
 
 ;--------------------------------------------------------
 ; PREGUNTA 10
@@ -486,9 +596,9 @@ pregunta_10:
 	call barra_progreso
 	call btn_anterior
 	call btn_siguiente
-	call init_interface
 
 mov si, 0009d
+	call btn_opt
 p10_manejar_clic:
 
 	call manejar_clic
@@ -508,11 +618,17 @@ p10_manejar_clic:
 p10_btn_verdadero:
 	mov al,00h
 	mov ds:[0300h+si], al
-	jmp pregunta_11
+	mov al, 01h
+	mov ds:[0350h+si], al
+	call btn_opt
+	jmp p10_manejar_clic
 p10_btn_falso:
 	mov al,01h
 	mov ds:[0300h+si], al
-	jmp pregunta_11
+	mov al, 00h
+	mov ds:[0350h+si], al
+	call btn_opt
+	jmp p10_manejar_clic
 
 ;--------------------------------------------------------
 ; PREGUNTA 11
@@ -531,9 +647,9 @@ pregunta_11:
 	call barra_progreso
 	call btn_anterior
 	call btn_siguiente
-	call init_interface
 
 mov si, 0010d
+	call btn_opt
 p11_manejar_clic:
 
 	call manejar_clic
@@ -553,11 +669,17 @@ p11_manejar_clic:
 p11_btn_verdadero:
 	mov al,00h
 	mov ds:[0300h+si], al
-	jmp pregunta_12
+	mov al, 01h
+	mov ds:[0350h+si], al
+	call btn_opt
+	jmp p11_manejar_clic
 p11_btn_falso:
 	mov al,01h
 	mov ds:[0300h+si], al
-	jmp pregunta_12
+	mov al, 00h
+	mov ds:[0350h+si], al
+	call btn_opt
+	jmp p11_manejar_clic
 
 ;--------------------------------------------------------
 ; PREGUNTA 12
@@ -576,9 +698,9 @@ pregunta_12:
 	call barra_progreso
 	call btn_anterior
 	call btn_siguiente
-	call init_interface
 
 mov si, 0011d
+	call btn_opt
 p12_manejar_clic:
 
 	call manejar_clic
@@ -596,13 +718,19 @@ p12_manejar_clic:
 	jmp p12_manejar_clic
 
 p12_btn_verdadero:
-	mov al,00h
-	mov ds:[0300h+si], al
-	jmp pregunta_13
-p12_btn_falso:
 	mov al,01h
 	mov ds:[0300h+si], al
-	jmp pregunta_13
+	mov al, 01h
+	mov ds:[0350h+si], al
+	call btn_opt
+	jmp p12_manejar_clic
+p12_btn_falso:
+	mov al,00h
+	mov ds:[0300h+si], al
+	mov al, 00h
+	mov ds:[0350h+si], al
+	call btn_opt
+	jmp p12_manejar_clic
 
 ;--------------------------------------------------------
 ; PREGUNTA 13
@@ -621,9 +749,9 @@ pregunta_13:
 	call barra_progreso
 	call btn_anterior
 	call btn_siguiente
-	call init_interface
 
 mov si, 0012d
+	call btn_opt
 p13_manejar_clic:
 
 	call manejar_clic
@@ -641,13 +769,19 @@ p13_manejar_clic:
 	jmp p13_manejar_clic
 
 p13_btn_verdadero:
-	mov al,00h
-	mov ds:[0300h+si], al
-	jmp pregunta_14
-p13_btn_falso:
 	mov al,01h
 	mov ds:[0300h+si], al
-	jmp pregunta_14
+	mov al, 01h
+	mov ds:[0350h+si], al
+	call btn_opt
+	jmp p13_manejar_clic
+p13_btn_falso:
+	mov al,00h
+	mov ds:[0300h+si], al
+	mov al, 00h
+	mov ds:[0350h+si], al
+	call btn_opt
+	jmp p13_manejar_clic
 
 ;--------------------------------------------------------
 ; PREGUNTA 14
@@ -666,9 +800,9 @@ pregunta_14:
 	call barra_progreso
 	call btn_anterior
 	call btn_siguiente
-	call init_interface
 
 mov si, 0013d
+	call btn_opt
 p14_manejar_clic:
 
 	call manejar_clic
@@ -688,11 +822,17 @@ p14_manejar_clic:
 p14_btn_verdadero:
 	mov al,00h
 	mov ds:[0300h+si], al
-	jmp pregunta_15
+	mov al, 01h
+	mov ds:[0350h+si], al
+	call btn_opt
+	jmp p14_manejar_clic
 p14_btn_falso:
 	mov al,01h
 	mov ds:[0300h+si], al
-	jmp pregunta_15
+	mov al, 00h
+	mov ds:[0350h+si], al
+	call btn_opt
+	jmp p14_manejar_clic
 
 
 ;--------------------------------------------------------
@@ -712,9 +852,9 @@ pregunta_15:
 	call barra_progreso
 	call btn_anterior
 	call btn_siguiente
-	call init_interface
 
 mov si, 0014d
+	call btn_opt
 p15_manejar_clic:
 
 	call manejar_clic
@@ -732,13 +872,19 @@ p15_manejar_clic:
 	jmp p15_manejar_clic
 
 p15_btn_verdadero:
-	mov al,00h
-	mov ds:[0300h+si], al
-	jmp pregunta_16
-p15_btn_falso:
 	mov al,01h
 	mov ds:[0300h+si], al
-	jmp pregunta_16
+	mov al, 01h
+	mov ds:[0350h+si], al
+	call btn_opt
+	jmp p15_manejar_clic
+p15_btn_falso:
+	mov al,00h
+	mov ds:[0300h+si], al
+	mov al, 00h
+	mov ds:[0350h+si], al
+	call btn_opt
+	jmp p15_manejar_clic
 
 ;--------------------------------------------------------
 ; PREGUNTA 16
@@ -757,9 +903,9 @@ pregunta_16:
 	call barra_progreso
 	call btn_anterior
 	call btn_siguiente
-	call init_interface
 
 mov si, 0015d
+	call btn_opt
 p16_manejar_clic:
 
 	call manejar_clic
@@ -777,13 +923,19 @@ p16_manejar_clic:
 	jmp p16_manejar_clic
 
 p16_btn_verdadero:
-	mov al,00h
-	mov ds:[0300h+si], al
-	jmp pregunta_17
-p16_btn_falso:
 	mov al,01h
 	mov ds:[0300h+si], al
-	jmp pregunta_17
+	mov al, 01h
+	mov ds:[0350h+si], al
+	call btn_opt
+	jmp p16_manejar_clic
+p16_btn_falso:
+	mov al,00h
+	mov ds:[0300h+si], al
+	mov al, 00h
+	mov ds:[0350h+si], al
+	call btn_opt
+	jmp p16_manejar_clic
 
 ;--------------------------------------------------------
 ; PREGUNTA 17
@@ -802,9 +954,9 @@ pregunta_17:
 	call barra_progreso
 	call btn_anterior
 	call btn_siguiente
-	call init_interface
 
 mov si, 0016d
+	call btn_opt
 p17_manejar_clic:
 
 	call manejar_clic
@@ -822,13 +974,19 @@ p17_manejar_clic:
 	jmp p17_manejar_clic
 
 p17_btn_verdadero:
-	mov al,00h
-	mov ds:[0300h+si], al
-	jmp pregunta_18
-p17_btn_falso:
 	mov al,01h
 	mov ds:[0300h+si], al
-	jmp pregunta_18
+	mov al, 01h
+	mov ds:[0350h+si], al
+	call btn_opt
+	jmp p17_manejar_clic
+p17_btn_falso:
+	mov al,00h
+	mov ds:[0300h+si], al
+	mov al, 00h
+	mov ds:[0350h+si], al
+	call btn_opt
+	jmp p17_manejar_clic
 
 ;--------------------------------------------------------
 ; PREGUNTA 18
@@ -847,9 +1005,9 @@ pregunta_18:
 	call barra_progreso
 	call btn_anterior
 	call btn_siguiente
-	call init_interface
 
 mov si, 0017d
+	call btn_opt
 p18_manejar_clic:
 
 	call manejar_clic
@@ -869,11 +1027,17 @@ p18_manejar_clic:
 p18_btn_verdadero:
 	mov al,00h
 	mov ds:[0300h+si], al
-	jmp pregunta_19
+	mov al, 01h
+	mov ds:[0350h+si], al
+	call btn_opt
+	jmp p18_manejar_clic
 p18_btn_falso:
 	mov al,01h
 	mov ds:[0300h+si], al
-	jmp pregunta_19
+	mov al, 00h
+	mov ds:[0350h+si], al
+	call btn_opt
+	jmp p18_manejar_clic
 
 ;--------------------------------------------------------
 ; PREGUNTA 19
@@ -892,9 +1056,9 @@ pregunta_19:
 	call barra_progreso
 	call btn_anterior
 	call btn_siguiente
-	call init_interface
 
 mov si, 0018d
+	call btn_opt
 p19_manejar_clic:
 
 	call manejar_clic
@@ -914,11 +1078,17 @@ p19_manejar_clic:
 p19_btn_verdadero:
 	mov al,00h
 	mov ds:[0300h+si], al
-	jmp pregunta_20
+	mov al, 01h
+	mov ds:[0350h+si], al
+	call btn_opt
+	jmp p19_manejar_clic
 p19_btn_falso:
 	mov al,01h
 	mov ds:[0300h+si], al
-	jmp pregunta_20
+	mov al, 00h
+	mov ds:[0350h+si], al
+	call btn_opt
+	jmp p19_manejar_clic
 
 ;--------------------------------------------------------
 ; PREGUNTA 20
@@ -937,9 +1107,9 @@ pregunta_20:
 	call barra_progreso
 	call btn_anterior
 	call btn_siguiente
-	call init_interface
 
 mov si, 0019d
+	call btn_opt
 p20_manejar_clic:
 
 	call manejar_clic
@@ -960,13 +1130,17 @@ p20_manejar_clic:
 p20_btn_verdadero:
 	mov al,00h
 	mov ds:[0300h+si], al
-	; jmp pregunta_21
-	jmp pantalla_fin
+	mov al, 01h
+	mov ds:[0350h+si], al
+	call btn_opt
+	jmp p20_manejar_clic
 p20_btn_falso:
 	mov al,01h
 	mov ds:[0300h+si], al
-	; jmp pregunta_21
-	jmp pantalla_fin
+	mov al, 00h
+	mov ds:[0350h+si], al
+	call btn_opt
+	jmp p20_manejar_clic
 ;-----------------------------
 ;-----------------------------
 ; 
@@ -987,12 +1161,14 @@ init_pregunta:
 	ret
 
 texto_pregunta:
+	; color gris
 	mov al,07fh
 	call setear_color_texto
 	mov dh, 05d
 	mov dl, 10d
 	mov al, ' '
 	call pc
+
 itr_texto_pregunta:
 	; Copiar pregunta completa
 	mov al,ds:[0500h + di]
@@ -1041,22 +1217,34 @@ pantalla_fin:
 		add dh, 02d
 
 		;Pasar a la siguiente columna
+		;solo si llegamos a la decima
 		inc di
 		mov ax, di
 		mov bl, 10d
 		div bl
+
+		; multiplo de 10
 		cmp ah, 00h
 		jnz continuar_itr_res
+
+		; agregar espaciamiento
 		add dl, 25d
+
+		; actualizar espaciamiento en memori
 		mov ds:[0180h], dl
 		mov dh, 02d
 	continuar_itr_res:
 		cmp di, 0025d
 		jnz poner_resultado_pregunta
 
+	;etiquetas indicadoras
 	call fin_etiquetas
+
+	;calcular puntaje final
 	call calificacion_final
 
+	;TODO: boton de salida
+	;ignorar por el momento
 pantalla_fin_manejar_clic:
 	call manejar_clic
 	call buscar_btn
@@ -1070,6 +1258,11 @@ pantalla_fin_manejar_clic:
 
 pantalla_fin_btn_salir:
 	jmp fin_programa
+
+
+; ---------------
+; Calcular calificacion final
+; ---------------
 
 calificacion_final:
 	mov si, 0000h
@@ -1091,10 +1284,13 @@ continuar_itr_calificacion_final:
 	mov dh, 25d
 	mov dl, 40d
 
+	;agregar un espacio
 	mov al,' '
 	call pc
 	call palabra_calificacion
 
+	; tanto
+	; regla de 3
 	mov bh, 04d
 	mov al,ds:[0190h]
 	mul bh
@@ -1104,12 +1300,19 @@ continuar_itr_calificacion_final:
 	mov al,'/'
 	call pc
 
+	; de 100
 	mov al,100d
 	mov ds:[0190h], al
 	call num_a_texto
 
 	ret
+
+;-----------------------------------------------------------------------------------
+; Colocar las etiquetas de colores para cada tipo de respuesta
+;-----------------------------------------------------------------------------------
 fin_etiquetas:
+
+	; para el cuadro verde de respuesta correcta
 	mov al,0fh
 	call setear_color_texto
 
@@ -1133,6 +1336,7 @@ fin_etiquetas:
 
 	call palabra_correcta
 
+	; para el cuadro rojo de respuesta incorrecta
 	mov ax, 0010d
 	mov ds:[0240h], ax
 	mov ax, 0040d
@@ -1153,6 +1357,7 @@ fin_etiquetas:
 
 	call palabra_fallida
 
+	; para el cuadro amarillo de sin contestar
 	mov ax, 0010d
 	mov ds:[0240h], ax
 	mov ax, 0040d
@@ -1175,6 +1380,7 @@ fin_etiquetas:
 
 	ret
 
+; asignar color al texto segun se contesto la pregunta
 color_codig_preg:
 	cmp al,00h
 	je color_rojo
@@ -1201,6 +1407,7 @@ color_amarillo:
 ; Controlador de botones
 ;--------------------------------------------------------
 
+; iteracion que esperar clic derecho
 manejar_clic:
 	mov al,00h
 	mov ds:[0275h], al
@@ -1212,6 +1419,7 @@ manejar_clic:
 	jne manejar_clic
 	ret
 
+; llamar a los botones posibles
 buscar_btn:
 	call verificar_btn_siguiente
 	call verificar_btn_anterior
@@ -1307,6 +1515,7 @@ init_grafico:
 
 	ret
 
+; DS:[0210h], color del pixel en 8 bits
 poner_pixel:
 	mov ah, 0ch
 	mov al,ds:[0210h]
@@ -1314,10 +1523,13 @@ poner_pixel:
 	int 10h
 	ret
 
+
+; DS:[0205h], color del texto en 8 bits
 setear_color_texto:
 	mov ds:[0205h], al
 	ret
 
+; DS:[0210h], color del pixel en 8 bits
 setear_color_pixel:
 	mov ds:[0210h], al
 	ret
@@ -1386,6 +1598,7 @@ barra_progreso:
 
 	ret
 
+; inicializar modo texto
 init_texto:
 	mov ah, 00h
 	mov al,03h
@@ -1400,25 +1613,31 @@ init_texto:
 num_a_texto:
 	mov al,00h
 
+	; limpiar celdas de memoria
 	mov ds:[0195h], al
 	mov ds:[0196h], al
 	mov ds:[0197h], al
 
+	; dato a imprimir
 	mov al,ds:[0190h]
 	mov si, 0003h
 sacar_digito:
+	; formato decimal
 	mov bh, 10d
 	mov ah, 00h
 	div bh
 	mov bl, ah
 	add bl, 30h
+	; llenar desde atras hacia adelante
 	mov ds:[0195h+si], bl
 	dec si
+	; ya no se puede descomponer el numero
 	cmp al,00h
 	je mostrar_digitos
 	cmp si, 0000h
 	jnz sacar_digito
 mostrar_digitos:
+	; llenar desde adelante hacia atras
 	mov al,ds:[0195h+si]
 	inc si
 	call pc
@@ -1426,9 +1645,12 @@ mostrar_digitos:
 	jnz mostrar_digitos
 	ret
 
+; colocar caracter en pantalla
 pc:
 	mov ah, 09h
 	mov bh, 00h
+	
+	;leer el color previamente asignado
 	mov bl, ds:[0205h]
 	mov cx, 0001h
 	int 10h
@@ -1456,9 +1678,12 @@ fin_avanzar:
 ;---- Boton de Siguiente ----
 
 
+; dibujar boton siguiente
 btn_siguiente:
 	mov al,03h
 	call setear_color_pixel
+
+	; ver subrutina de dibujar_rectangulo
 	mov ax, 0580d
 	mov ds:[0240h], ax
 	mov ax, 0640d
@@ -1491,7 +1716,7 @@ blanco:
 	mov dx, 405d  ;fila
 
 sigo:
-	call pixel
+	call poner_pixel
 	inc cx
 	cmp cx, 525d
 	jne sigo
@@ -1508,7 +1733,7 @@ blancof:
 	mov dx, 405d
 
 sigo2:
-	call pixel2
+	call poner_pixel
 	inc cx
 	cmp cx, 405d
 	jne sigo2
@@ -1566,31 +1791,47 @@ sigo6: call pixel3 ;el pixel blanco
 ret
 
 init_interface:
-call linea_vertical
-call linea_vertical2
-call linea_arriba
-call linea_arriba2
-call blanco
-call blancof
-call letras
-call letras2
-ret
+	call linea_vertical
+	call linea_arriba
+	call linea_vertical2
+	call linea_arriba2
 
-pixel:
-mov ah,0ch
-mov bl ,00h
-mov al,0111b
-mov bh,00h
-int 10h
-ret
+	call btn_verdadero
+	call btn_falso
+	ret
 
-pixel2:
-mov ah,0ch
-mov bl ,00h
-mov al,0111b
-mov bh,00h
-int 10h
-ret
+; botones seleccionados
+btn_falso_act:
+	; fondo blanco
+	mov al,1111b
+	call setear_color_pixel
+	call blanco
+	call letras2
+	ret
+
+btn_verdadero_act:
+	mov al,1111b
+	call setear_color_pixel
+	call blancof
+	call letras
+	ret
+
+
+; botones sin seleccionar
+btn_falso:
+	; fnodo gris
+	mov al,0111b
+	call setear_color_pixel
+	call blanco
+	call letras2
+	ret
+
+btn_verdadero:
+	mov al,0111b
+	call setear_color_pixel
+	call blancof
+	call letras
+	ret
 
 ;este es para las lineas del efecto 3d
 pixel3: 
