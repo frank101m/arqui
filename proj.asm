@@ -1257,14 +1257,14 @@ pantalla_fin:
 
 	;TODO: boton de salida
 	;ignorar por el momento
+
+	call btn_salir
 pantalla_fin_manejar_clic:
 	call manejar_clic
-	call buscar_btn
+	call verificar_btn_salir
 
 	mov al,ds:[0275h]
-	cmp al,10h
-	je pantalla_fin_btn_salir
-	cmp al,11h
+	cmp al,06h
 	je pantalla_fin_btn_salir
 	jmp pantalla_fin_manejar_clic
 
@@ -1316,6 +1316,7 @@ continuar_itr_calificacion_final:
 	mov al,100d
 	mov ds:[0190h], al
 	call num_a_texto
+
 
 	ret
 
@@ -1439,6 +1440,24 @@ buscar_btn:
 	call verificar_btn_falso
 	ret
 
+verificar_btn_salir:
+	;370 - 422 en x
+	;430 - 450 en y
+	cmp cx, 0370d
+	jb salir_verificar_btn_salir
+	cmp cx, 0422d
+	ja salir_verificar_btn_salir
+	cmp dx, 0430d
+	jb salir_verificar_btn_salir
+	cmp dx, 0450d
+	ja salir_verificar_btn_salir
+	mov al, 06h
+	mov ds:[0275h], al
+salir_verificar_btn_salir:
+	ret
+
+
+
 verificar_btn_principal:
 	;250 - 373 en x
 	;405 - 435 en y
@@ -1456,41 +1475,41 @@ salir_verificar_btn_principal:
 	ret
 
 verificar_btn_siguiente:
-	;580 - 640 en x
-	;240 - 270 en y
-	cmp cx, 0580d
+	;550 - 640 en x
+	;235 - 260 en y
+	cmp cx, 0550d
 	jb salir_verificar_btn_verdadero
 	cmp cx, 0640d
 	ja salir_verificar_btn_verdadero
-	cmp dx, 0240d
+	cmp dx, 0235d
 	jb salir_verificar_btn_verdadero
-	cmp dx, 0270d
+	cmp dx, 0260d
 	ja salir_verificar_btn_verdadero
 	mov al,13h
 	mov ds:[0275h], al
 	ret
 
 verificar_btn_anterior:
-	;000 - 060 en x
-	;240 - 270 en y
+	;000 - 090 en x
+	;235 - 260 en y
 	cmp cx, 0000d
 	jb salir_verificar_btn_verdadero
-	cmp cx, 060d
+	cmp cx, 090d
 	ja salir_verificar_btn_verdadero
-	cmp dx, 0240d
+	cmp dx, 0235d
 	jb salir_verificar_btn_verdadero
-	cmp dx, 0270d
+	cmp dx, 0260d
 	ja salir_verificar_btn_verdadero
 	mov al,12h
 	mov ds:[0275h], al
 	ret
 
 verificar_btn_verdadero:
-	;310 - 405 en x
+	;210 - 305 en x
 	;405 - 435 en y
-	cmp cx, 0310d
+	cmp cx, 0210d
 	jb salir_verificar_btn_verdadero
-	cmp cx, 0405d
+	cmp cx, 0305d
 	ja salir_verificar_btn_verdadero
 	cmp dx, 0405d
 	jb salir_verificar_btn_verdadero
@@ -1502,11 +1521,11 @@ salir_verificar_btn_verdadero:
 	ret
 
 verificar_btn_falso:
-	;430 - 525 en x
+	;315 - 410 en x
 	;405 - 435 en y
-	cmp cx, 0430d
+	cmp cx, 0315d
 	jb salir_verificar_btn_falso
-	cmp cx, 0520d
+	cmp cx, 0410d
 	ja salir_verificar_btn_falso
 	cmp dx, 0405d
 	jb salir_verificar_btn_falso
@@ -1706,10 +1725,13 @@ pc:
 	ret
 
 avanzar:
-	mov al,00h
+	mov al, 00h
 	mov ah, 02h
 	mov bh, 00h
 	;Pasar a la siguiente fila
+	mov ch, ds:[0278h]
+	cmp ch, 01d
+	je fin_avanzar
 	cmp dl, 70d
 	jne fin_avanzar
 	mov dl, 10d
@@ -1726,50 +1748,109 @@ fin_avanzar:
 ;---- Boton de Siguiente ----
 
 
+btn_salir:
+	mov al,07h
+	call setear_color_pixel
+
+	mov ax, 0370d
+	mov ds:[0240h], ax
+	mov ax, 0422d
+	mov ds:[0242h], ax
+	mov ax, 0430d
+	mov ds:[0244h], ax
+	mov ax, 0450d
+	mov ds:[0246h], ax
+
+	call dibujar_rectangulo
+
+	;Texto salir
+	mov dh, 27d
+	mov dl, 46d
+
+	mov al, 01d
+	mov ds:[0278h], al
+	mov al, ' '
+	call pc
+	mov al, 0f7h
+	call setear_color_texto
+	call palabra_salir
+	mov al, 00d
+	mov ds:[0278h], al
+
+	ret
+
 ; dibujar boton siguiente
 btn_siguiente:
-	mov al,03h
+	mov al,07h
 	call setear_color_pixel
 
 	; ver subrutina de dibujar_rectangulo
-	mov ax, 0580d
+	mov ax, 0550d
 	mov ds:[0240h], ax
 	mov ax, 0640d
 	mov ds:[0242h], ax
-	mov ax, 0240d
+	mov ax, 0235d
 	mov ds:[0244h], ax
-	mov ax, 0270d
+	mov ax, 0260d
 	mov ds:[0246h], ax
 
 	call dibujar_rectangulo
+
+	mov dh, 15d
+	mov dl, 69d
+
+	mov al, 01d
+	mov ds:[0278h], al
+	mov al, ' '
+	call pc
+	mov al, 0f7h
+	call setear_color_texto
+	call palabra_siguiente
+	mov al, 00d
+	mov ds:[0278h], al
+
 	ret
 btn_anterior:
-	mov al,03h
+	mov al,07h
 	call setear_color_pixel
 	mov ax, 0000d
 	mov ds:[0240h], ax
-	mov ax, 0060d
+	mov ax, 0090d
 	mov ds:[0242h], ax
-	mov ax, 0240d
+	mov ax, 0235d
 	mov ds:[0244h], ax
-	mov ax, 0270d
+	mov ax, 0260d
 	mov ds:[0246h], ax
 
 	call dibujar_rectangulo
+
+	mov dh, 15d
+	mov dl, 01d
+
+	mov al, 01d
+	mov ds:[0278h], al
+	mov al, ' '
+	call pc
+	mov al, 0f7h
+	call setear_color_texto
+	call palabra_anterior
+	mov al, 00d
+	mov ds:[0278h], al
+
 	ret
 
 ;para el boton de falso
 blanco:
-	mov cx, 420d ;columna
+	mov cx, 315d ;columna
 	mov dx, 405d  ;fila
 
 sigo:
 	call poner_pixel
 	inc cx
-	cmp cx, 520d
+	cmp cx, 410d
 	jne sigo
 
-	mov cx,420d
+	mov cx, 315d
 	inc dx
 	cmp dx,435d
 	jne sigo
@@ -1777,16 +1858,16 @@ sigo:
 
 ;para el boton de verdadero
 blancof:
-	mov cx, 310d
+	mov cx, 210d
 	mov dx, 405d
 
 sigo2:
 	call poner_pixel
 	inc cx
-	cmp cx, 405d
+	cmp cx, 305d
 	jne sigo2
 
-	mov cx,310d
+	mov cx,210d
 	inc dx
 	cmp dx,435d
 	jne sigo2
@@ -1847,7 +1928,6 @@ init_interface:
 	call btn_verdadero
 	call btn_falso
 	ret
-
 ; botones seleccionados
 btn_falso_act:
 	; fondo blanco
@@ -1884,17 +1964,17 @@ btn_verdadero:
 ;este es para las lineas del efecto 3d
 pixel3: 
 	mov ah, 0ch
-mov al,1111b ;color blanco
-mov bh, 00 ;la pagina en la que estoy trabajando
-int 10h
-ret
+	mov al,0011b ;color blanco
+	mov bh, 00 ;la pagina en la que estoy trabajando
+	int 10h
+	ret
 
 letras:                 
 	;posicion inicial del cursor
 	mov dh, 77d
-	mov dl, 55d
+	mov dl, 43d
 	call mover
-	mov al,"v"
+	mov al,"V"
 	call caracter
 	call mover
 
@@ -1934,9 +2014,9 @@ letras:
 letras2:                 
 	;posicion inicial del cursor
 	mov dh, 77d
-	mov dl, 72d
+	mov dl, 58d
 	call mover
-	mov al,"f"
+	mov al,"F"
 	call caracter
 	call mover
 
@@ -2245,6 +2325,8 @@ int 10h
 ret
 
 llamartodo_p_principal:
+mov al, 03d
+call setear_color_pixel
 ;para la h
 call h_vertical
 call h_vertical2
@@ -2365,6 +2447,59 @@ gc:
 	mov ds:[0500h + di], al
 	inc di
 	ret
+palabra_salir:
+
+    mov al, 'S'
+    call pc
+    mov al, 'a'
+    call pc
+    mov al, 'l'
+    call pc
+    mov al, 'i'
+    call pc
+    mov al, 'r'
+    call pc
+    ret
+
+palabra_anterior:
+    mov al, 'A'
+    call pc
+    mov al, 'n'
+    call pc
+    mov al, 't'
+    call pc
+    mov al, 'e'
+    call pc
+    mov al, 'r'
+    call pc
+    mov al, 'i'
+    call pc
+    mov al, 'o'
+    call pc
+    mov al, 'r'
+    call pc
+    ret
+
+palabra_siguiente:
+    mov al, 'S'
+    call pc
+    mov al, 'i'
+    call pc
+    mov al, 'g'
+    call pc
+    mov al, 'u'
+    call pc
+    mov al, 'i'
+    call pc
+    mov al, 'e'
+    call pc
+    mov al, 'n'
+    call pc
+    mov al, 't'
+    call pc
+    mov al, 'e'
+    call pc
+    ret
 
 palabra_calificacion:
     mov al,'C'
