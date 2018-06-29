@@ -12,23 +12,35 @@ Start:	;Comienzo de Programa
 ; ------------------------------------------------------------------------------------------------
 
 ; inicializar el modo texto
-call init_texto
 call init_grafico
+call limpiar_reg
+call llamartodo_p_principal
 call init_mem_preguntas
 call init_pregunta
 
 ; manejo del mouse
-mov ax, 0000h
-int 33h
+; mov ax, 0000h
+; int 33h
 
-jmp pregunta_1
+principal_manejar_clic:
+	; esperar un clic izquierdo
+	call manejar_clic
 
-;mov ax, 0000h
-;int 16h
+	; dejar que el controlador identifique el boton
+	call verificar_btn_principal
+
+	; 0275h: codigo de boton  presionado
+	mov al, ds:[0275h]
+	; 10h: boton de iniciar
+	cmp al, 05h
+	je pregunta_1
+
+	; volver a esperar clic
+	jmp principal_manejar_clic
 
 fin_programa:
-mov ax, 4c00h
-int 21h
+	mov ax, 4c00h
+	int 21h
 
 ; ------------------------------------------------------------------------------------------------
 
@@ -42,21 +54,21 @@ init_mem_preguntas:
 	mov ds:[0220h], al
 
 	;Total de preguntas
-	mov al,25d
+	mov al,20d
 	mov ds:[0221h], al
 
 	;Valores de las preguntas
 	mov al,02d ; Indicador de pregunta sin contestar.
 	mov si, 0000h
 
-	;0300h - 0300h + 25d: respuestas del usuario
+	;0300h - 0300h + 20d: respuestas del usuario
 	; 00h: incorrecto
 	; 01h: correcto
 	; 02h: sin contestar
 	llenar_respuesta:
 		mov ds:[0300h + si], al
 		inc si
-		cmp si, 0025d
+		cmp si, 0020d
 		jnz llenar_respuesta
 
 	mov si, 0000h
@@ -65,7 +77,7 @@ init_mem_preguntas:
 	llenar_opcion_escogida:
 		mov ds:[0350h + si], al
 		inc si
-		cmp si, 0025d
+		cmp si, 0020d
 		jnz llenar_opcion_escogida
 
 
@@ -1186,7 +1198,7 @@ pantalla_fin:
 	call limpiar_reg
 	call init_grafico
 	call limpiar_reg
-	mov dh, 02d
+	mov dh, 06d
 	mov di, 0000d
 
 	;Espaciamiento inicial
@@ -1220,7 +1232,7 @@ pantalla_fin:
 		;solo si llegamos a la decima
 		inc di
 		mov ax, di
-		mov bl, 10d
+		mov bl, 07d
 		div bl
 
 		; multiplo de 10
@@ -1232,9 +1244,9 @@ pantalla_fin:
 
 		; actualizar espaciamiento en memori
 		mov ds:[0180h], dl
-		mov dh, 02d
+		mov dh, 06d
 	continuar_itr_res:
-		cmp di, 0025d
+		cmp di, 0020d
 		jnz poner_resultado_pregunta
 
 	;etiquetas indicadoras
@@ -1277,7 +1289,7 @@ itr_calificacion_final:
 	mov ds:[0190h], al
 continuar_itr_calificacion_final:
 	inc si
-	cmp si, 25d
+	cmp si, 20d
 	jnz itr_calificacion_final
 
 	;Texto inicial
@@ -1409,7 +1421,7 @@ color_amarillo:
 
 ; iteracion que esperar clic derecho
 manejar_clic:
-	mov al,00h
+	mov al, 00h
 	mov ds:[0275h], al
 	mov ax, 0005h
 	mov bx, 0000h	; clic izquierdo
@@ -1425,6 +1437,22 @@ buscar_btn:
 	call verificar_btn_anterior
 	call verificar_btn_verdadero
 	call verificar_btn_falso
+	ret
+
+verificar_btn_principal:
+	;250 - 373 en x
+	;405 - 435 en y
+	cmp cx, 0250d
+	jb salir_verificar_btn_principal
+	cmp cx, 0373d
+	ja salir_verificar_btn_principal
+	cmp dx, 0405d
+	jb salir_verificar_btn_principal
+	cmp dx, 0435d
+	ja salir_verificar_btn_principal
+	mov al, 05h
+	mov ds:[0275h], al
+salir_verificar_btn_principal:
 	ret
 
 verificar_btn_siguiente:
@@ -1478,7 +1506,7 @@ verificar_btn_falso:
 	;405 - 435 en y
 	cmp cx, 0430d
 	jb salir_verificar_btn_falso
-	cmp cx, 0525d
+	cmp cx, 0520d
 	ja salir_verificar_btn_falso
 	cmp dx, 0405d
 	jb salir_verificar_btn_falso
@@ -1596,6 +1624,26 @@ barra_progreso:
 	call setear_color_pixel
 	call dibujar_rectangulo
 
+	;Colocar el numero de la pregunta
+	mov al, 07fh
+	call setear_color_texto
+	mov dh, 02d
+	mov dl, 02d
+	mov al, ' '
+	call pc
+	call palabra_pregunta
+
+	mov al, ds:[0220h]
+	mov ds:[0190h], al
+	call num_a_texto
+
+	mov al, '/'
+	call pc
+
+	mov al, ds:[0221h]
+	mov ds:[0190h], al
+	call num_a_texto
+
 	ret
 
 ; inicializar modo texto
@@ -1712,16 +1760,16 @@ btn_anterior:
 
 ;para el boton de falso
 blanco:
-	mov cx, 425d ;columna
+	mov cx, 420d ;columna
 	mov dx, 405d  ;fila
 
 sigo:
 	call poner_pixel
 	inc cx
-	cmp cx, 525d
+	cmp cx, 520d
 	jne sigo
 
-	mov cx,425d
+	mov cx,420d
 	inc dx
 	cmp dx,435d
 	jne sigo
@@ -1758,13 +1806,13 @@ sigo3:
 	ret
 
 linea_arriba2:
-	mov cx, 425d ;columna
+	mov cx, 420d ;columna
 	mov dx, 404d ;fila
 
 sigo4:
 	call pixel3
 	inc cx ;para que avance mi pixel
-	cmp cx, 525d ;hasta aqui llegara mi pixel
+	cmp cx, 520d ;hasta aqui llegara mi pixel
 	jne sigo4 ;si no he llegado sigo!            
 	ret
 
@@ -1922,6 +1970,392 @@ mover:
 	inc dl
 	int 10h
 	ret
+
+
+;--------------------------------------------------------
+; Pantalla principal
+;--------------------------------------------------------
+;letra h
+h_vertical:
+            mov cx, 50d ;columna
+            mov dx, 100d ;fila
+                        
+s2: call pixel3 ;el pixel blanco
+            inc dx 
+            cmp dx, 200d 
+            jne s2
+
+mov dx,100d
+inc cx
+cmp cx, 65d
+jne s2
+ret
+
+h_vertical2:
+            mov cx, 115d ;columna
+            mov dx, 100d ;fila
+                        
+s3: call pixel3 ;el pixel blanco
+            inc dx 
+            cmp dx, 200d 
+            jne s3
+mov dx,100d
+inc cx
+cmp cx,130d
+jne s3
+ret
+
+linea_enmedio:
+mov cx,50d
+mov dx,150
+
+s5:
+call pixel3
+inc cx 
+cmp cx, 120d 
+jne s5
+
+mov cx,50d
+inc dx
+cmp dx,155d
+jne s5
+ret
+;letra o
+
+p_linea_arriba:
+mov cx, 180d ;columna
+mov dx, 100d ;fila                              
+
+s:
+call pixel3
+inc cx 
+cmp cx, 250d 
+jne s
+
+mov cx,180d
+inc dx
+cmp dx,105d
+jne s   
+ret
+
+
+linea_abajo:
+mov cx, 180d ;columna
+mov dx, 200d ;fila                        
+
+s4:
+call pixel3
+inc cx 
+cmp cx, 250d 
+jne s4 
+
+mov cx,180d
+inc dx
+cmp dx,205d
+jne s4
+ret
+
+o_vertical:
+            mov cx, 180d ;columna
+            mov dx, 100d ;fila
+                        
+s6: call pixel3 ;el pixel blanco
+            inc dx 
+            cmp dx, 200d 
+            jne s6
+mov dx,100d
+inc cx
+cmp cx,200d
+jne s6
+ret
+
+o_vertical2:
+            mov cx, 245d ;columna
+            mov dx, 100d ;fila
+                        
+s7: call pixel3 ;el pixel blanco
+            inc dx 
+            cmp dx, 200d 
+            jne s7
+mov dx,100d
+inc cx
+cmp cx,250d
+jne s7
+ret
+
+;letra l
+l_vertical:
+            mov cx, 295d ;columna
+            mov dx, 100d ;fila
+                        
+s8: call pixel3 ;el pixel blanco
+            inc dx 
+            cmp dx, 200d 
+            jne s8
+mov dx,100d
+inc cx
+cmp cx,315d
+jne s8
+ret
+
+l_abajo:
+mov cx, 295d ;columna
+mov dx, 200d ;fila                        
+
+s9:
+call pixel3
+inc cx 
+cmp cx, 355d 
+jne s9
+
+mov cx,295d
+inc dx
+cmp dx,205d
+jne s9
+ret
+
+boton:
+mov cx, 250d ;columna
+mov dx, 405d  ;fila
+
+s10:
+call pixelboton
+inc cx
+cmp cx, 373d
+jne s10
+
+mov cx,250d
+inc dx
+cmp dx,435d
+jne s10
+ret
+;letra a
+a_vertical:
+            mov cx, 400d ;columna
+            mov dx, 100d ;fila
+                        
+s11: call pixel3 ;el pixel blanco
+            inc dx 
+            cmp dx, 205d 
+            jne s11
+mov dx,100d
+inc cx
+cmp cx,410d
+jne s11
+ret
+
+a_arriba:
+            mov cx, 400d ;columna
+            mov dx, 100d ;fila
+                        
+s12: call pixel3 ;el pixel blanco
+            inc cx 
+            cmp cx, 470d 
+            jne s12
+mov cx,400d
+inc dx
+cmp dx,105d
+jne s12
+ret
+
+a_vertical2:
+            mov cx, 470d ;columna
+            mov dx, 100d ;fila
+                        
+s13: call pixel3 ;el pixel blanco
+            inc dx 
+            cmp dx, 205d 
+            jne s13
+mov dx,100d
+inc cx
+cmp cx,475d
+jne s13
+ret
+
+a_enmedio:
+mov cx,400d
+mov dx,150d
+
+s14:
+call pixel3
+inc cx 
+cmp cx, 470d 
+jne s14
+
+mov cx,400d
+inc dx
+cmp dx,155d
+jne s14
+ret
+
+exclamacion:
+mov cx,530d
+mov dx,100d
+
+s15:
+           call pixel3 ;el pixel blanco
+            inc dx 
+            cmp dx, 185d 
+            jne s15
+mov dx,100d
+inc cx
+cmp cx,545d
+jne s15
+ret
+
+exclamacion_punto:
+mov cx,530d
+mov dx,190d
+
+s16:
+           call pixel3 ;el pixel blanco
+            inc dx 
+            cmp dx, 205d 
+            jne s16
+
+mov dx,190d
+inc cx
+cmp cx,545d
+jne s16
+ret
+
+linea_decoracion:
+mov cx, 25d ;columna
+mov dx, 40d ;fila                              
+
+s17:
+call pixel3
+inc cx 
+cmp cx, 600d 
+jne s17
+
+mov cx,25d
+inc dx
+cmp dx,55d
+jne s17   
+ret
+
+
+pixelboton:
+mov ah,0ch
+mov bl ,00h
+mov al,0111b
+mov bh,00h
+int 10h
+ret
+
+llamartodo_p_principal:
+;para la h
+call h_vertical
+call h_vertical2
+call linea_enmedio
+;para la o
+call p_linea_arriba
+call linea_abajo
+call o_vertical
+call o_vertical2
+;para letra l
+call p_letras
+call l_vertical
+call l_abajo
+;para el boton
+call p_letras_btn_mov2
+call boton
+call p_letras
+;para la a
+call a_vertical
+call a_vertical2
+call a_arriba
+call a_enmedio
+;para signo !
+call exclamacion
+call exclamacion_punto
+call linea_decoracion
+ret
+
+p_letras:                 
+            ;posicion inicial del cursor
+            mov dh, 77d
+            mov dl, 48d
+            call mover
+            mov al, "e"
+            call caracter
+            call mover
+ 
+            mov al, "m"
+            call caracter
+            call mover
+
+            mov al, "p"
+            call caracter
+            call mover 
+           
+            mov al, "e"
+            call caracter
+            call mover
+           
+            mov al, "z"
+            call caracter
+            call mover
+            
+            mov al, "a"
+            call caracter
+            call mover
+            
+            mov al, "r"
+            call caracter
+            call mover
+
+            mov al, " "
+            call caracter
+            call mover
+
+            mov al, "q"
+            call caracter
+            call mover 
+           
+            mov al, "u"
+            call caracter
+            call mover
+           
+            mov al, "i"
+            call caracter
+            call mover
+            
+            mov al, "z"
+            call caracter
+            call mover
+            ret
+
+p_letras_btn_mov2:
+mov dh, 77
+mov dl, 48
+
+call mover
+mov al,"b"
+call caracter
+call mover
+
+            mov al, "i"
+            call caracter
+            call mover
+
+            mov al, "e"
+            call caracter
+            call mover 
+           
+            mov al, "n"
+            call caracter
+            call mover
+           
+            mov al, "v"
+            call caracter
+            call mover
+            
+            mov al, "e"
+            call caracter
+            call mover
+ret
 
 ;--------------------------------------------------------
 ; Caracteres que conforman las preguntas.
